@@ -48,6 +48,7 @@ export default function SetupTab({ scenario, onChange, onReset, onRandomize, onS
             })}
           </div>
           <p className="text-xs leading-relaxed text-white/45">
+            Switching tabs rolls a new prospect drawn from that offer&rsquo;s archetype pool.{' '}
             {scenario.mode === 'cold'
               ? 'Cold call: the prospect has never heard of you or Astraura and will demand a hook immediately.'
               : 'Warm call: the prospect already knows Astraura, has afternoon brain fog, and booked this call themselves.'}
@@ -129,6 +130,13 @@ export default function SetupTab({ scenario, onChange, onReset, onRandomize, onS
             <textarea className="field h-20 resize-none" value={scenario.primaryPain} onChange={set('primaryPain')} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="What they care about">
+              <textarea
+                className="field h-16 resize-none"
+                value={scenario.prospectFocus}
+                onChange={set('prospectFocus')}
+              />
+            </Field>
             <Field label="Hidden objection">
               <input className="field" value={scenario.hiddenObjection} onChange={set('hiddenObjection')} />
             </Field>

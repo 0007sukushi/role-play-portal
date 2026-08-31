@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Check, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react'
+import { PRIMARY_MODEL } from '../lib/gemini'
 
 export default function Header({ apiKey, onApiKeyChange }) {
   const [visible, setVisible] = useState(false)
@@ -33,7 +34,7 @@ export default function Header({ apiKey, onApiKeyChange }) {
               type={visible ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => handleChange(e.target.value)}
-              placeholder="Gemini API key (gemini-3.6-flash)"
+              placeholder={`Gemini API key (${PRIMARY_MODEL})`}
               className="field w-full pl-9 pr-10 md:w-96"
               spellCheck={false}
             />

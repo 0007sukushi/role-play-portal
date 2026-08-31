@@ -81,8 +81,12 @@ export default function App() {
           apiKey: apiKeyRef.current,
           systemPrompt: buildProspectSystemPrompt(scenarioRef.current),
           contents: transcriptToContents(next),
+          onNotice: (notice) => {
+            if (callId === callIdRef.current) setCallError(notice)
+          },
         })
         if (callId !== callIdRef.current) return
+        setCallError(null)
         const withReply = [...transcriptRef.current, { role: 'prospect', text: reply, at: Date.now() }]
         transcriptRef.current = withReply
         setTranscript(withReply)
@@ -128,7 +132,7 @@ export default function App() {
   }, [cancelSpeech, stop])
 
   const randomizeProspect = useCallback(() => {
-    setScenario((prev) => ({ ...prev, ...randomProspect() }))
+    setScenario((prev) => ({ ...prev, ...randomProspect(prev.offerId) }))
   }, [])
 
   const startCall = () => {
