@@ -1,11 +1,14 @@
-import { BookOpen, ListChecks, PlayCircle, RotateCcw, ShieldQuestion, Sparkles } from 'lucide-react'
+import { BookOpen, Dices, ListChecks, PlayCircle, RotateCcw, ShieldQuestion, Sparkles } from 'lucide-react'
 import {
   AAAR_FRAMEWORK,
   CORE_PRINCIPLES,
   DIFFICULTIES,
   DISCOVERY_PROTOCOL,
+  GENDERS,
   MOODS,
+  OFFERS,
   SOURCE_BOOKS,
+  applyOffer,
 } from '../lib/salesEngine'
 
 function Field({ label, children }) {
@@ -17,12 +20,40 @@ function Field({ label, children }) {
   )
 }
 
-export default function SetupTab({ scenario, onChange, onReset, onStartCall, voices }) {
+export default function SetupTab({ scenario, onChange, onReset, onRandomize, onStartCall, voices }) {
   const set = (key) => (e) => onChange({ ...scenario, [key]: e.target.value })
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       <section className="space-y-6">
+        <div className="card space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Choose an offer</h2>
+          <div className="flex flex-wrap gap-2">
+            {OFFERS.map((offer) => {
+              const isActive = offer.id === scenario.offerId
+              return (
+                <button
+                  key={offer.id}
+                  type="button"
+                  onClick={() => onChange(applyOffer(scenario, offer.id))}
+                  className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                    isActive
+                      ? 'border-gold/70 bg-gold/10 text-gold'
+                      : 'border-edge bg-ink text-white/60 hover:border-white/25 hover:text-white'
+                  }`}
+                >
+                  {offer.tab}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs leading-relaxed text-white/45">
+            {scenario.mode === 'cold'
+              ? 'Cold call: the prospect has never heard of you or Astraura and will demand a hook immediately.'
+              : 'Warm call: the prospect already knows Astraura, has afternoon brain fog, and booked this call themselves.'}
+          </p>
+        </div>
+
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold">
@@ -38,13 +69,21 @@ export default function SetupTab({ scenario, onChange, onReset, onStartCall, voi
           <Field label="What the offer does">
             <textarea className="field h-24 resize-none" value={scenario.offerDescription} onChange={set('offerDescription')} />
           </Field>
+          <Field label="Terms">
+            <input className="field" value={scenario.terms} onChange={set('terms')} />
+          </Field>
           <Field label="Goal of this call">
             <input className="field" value={scenario.callGoal} onChange={set('callGoal')} />
           </Field>
         </div>
 
         <div className="card space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">AI Prospect</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">AI Prospect</h2>
+            <button type="button" onClick={onRandomize} className="btn-ghost !px-3 !py-1.5 text-xs">
+              <Dices className="h-3.5 w-3.5" /> Randomize Prospect
+            </button>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Name">
               <input className="field" value={scenario.prospectName} onChange={set('prospectName')} />
@@ -57,6 +96,15 @@ export default function SetupTab({ scenario, onChange, onReset, onStartCall, voi
             </Field>
             <Field label="Industry">
               <input className="field" value={scenario.industry} onChange={set('industry')} />
+            </Field>
+            <Field label="Gender">
+              <select className="field" value={scenario.prospectGender} onChange={set('prospectGender')}>
+                {GENDERS.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Difficulty">
               <select className="field" value={scenario.difficulty} onChange={set('difficulty')}>

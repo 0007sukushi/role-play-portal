@@ -20,9 +20,11 @@ Other scripts: `npm run build`, `npm run preview`, `npm run lint`.
 
 ## Tabs
 
-1. **Setup & Scenario Config** — offer, prospect persona, difficulty, mood, hidden objection, budget, and the prospect's TTS voice/rate/pitch. The sales system that gets injected into the prompt is documented here too.
-2. **Simulated Zoom Room** — pulsing avatar (gold while the prospect speaks, green while it listens), live transcript on the right, mic toggle, stop-audio, and end call. A text box is available when the mic isn't (Chrome/Edge only for speech recognition).
-3. **Post-Call Scorecard** — overall score, outcome, per-category breakdown, 4-step discovery checklist, strengths / improvements / missed opportunities, next drill, and the full transcript.
+1. **Setup & Scenario Config** — pick one of five offer presets (Founding Circle £1K, Angel Investor £5K, Equity Partner £20K, Co-Founder hire, Cold Outreach), then tune the prospect persona (name, role, gender, difficulty, mood, hidden objection, budget) or hit **Randomize Prospect** for a fresh one. Voice/rate/pitch and the injected sales system are documented here too.
+2. **Simulated Zoom Room** — pulsing avatar (gold while the prospect speaks, green while it listens), live transcript on the right, mic toggle, stop-audio, and end call. Opening this tab always starts a fresh call; ending one stops the mic and audio, clears the transcript, and rolls a new prospect. A text box is available when the mic isn't (Chrome/Edge only for speech recognition).
+3. **Post-Call Scorecard** — overall score, outcome, per-category breakdown, 4-step discovery checklist, strengths / improvements / missed opportunities, next drill, and the graded call's transcript.
+
+The four warm presets tell the prospect they already know Astraura, suffer afternoon brain fog, and booked the call themselves. The Cold Outreach preset flips that: the prospect has never heard of you, is impatient, and the win is permission plus a booked follow-up rather than money.
 
 ## Sales engine
 

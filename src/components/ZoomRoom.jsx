@@ -88,7 +88,9 @@ export default function ZoomRoom({
           <span className="flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" /> LIVE
           </span>
-          <span>{scenario.offerName} discovery call</span>
+          <span>
+            {scenario.offerName} · {scenario.mode === 'cold' ? 'cold call' : 'discovery call'}
+          </span>
         </div>
 
         <div className="flex flex-col items-center gap-4">

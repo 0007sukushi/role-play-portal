@@ -4,7 +4,12 @@ import Tabs from './components/Tabs'
 import SetupTab from './components/SetupTab'
 import ZoomRoom from './components/ZoomRoom'
 import Scorecard from './components/Scorecard'
-import { DEFAULT_SCENARIO, buildProspectSystemPrompt, buildScorecardPrompt } from './lib/salesEngine'
+import {
+  DEFAULT_SCENARIO,
+  buildProspectSystemPrompt,
+  buildScorecardPrompt,
+  randomProspect,
+} from './lib/salesEngine'
 import { callGemini, parseJsonResponse, transcriptToContents } from './lib/gemini'
 import { useSpeechRecognition } from './lib/useSpeechRecognition'
 import { useSpeechSynthesis } from './lib/useSpeechSynthesis'
@@ -24,16 +29,22 @@ function loadStored(key, fallback) {
 export default function App() {
   const [tab, setTab] = useState('setup')
   const [apiKey, setApiKey] = useState(() => loadStored(API_KEY_STORAGE, ''))
-  const [scenario, setScenario] = useState(() => ({ ...DEFAULT_SCENARIO, ...loadStored(SCENARIO_STORAGE, {}) }))
+  const [scenario, setScenario] = useState(() => {
+    const stored = loadStored(SCENARIO_STORAGE, {})
+    return stored.offerId ? { ...DEFAULT_SCENARIO, ...stored } : DEFAULT_SCENARIO
+  })
   const [transcript, setTranscript] = useState([])
+  const [callActive, setCallActive] = useState(false)
   const [thinking, setThinking] = useState(false)
   const [callError, setCallError] = useState(null)
+  const [gradedCall, setGradedCall] = useState(null)
   const [scorecard, setScorecard] = useState(null)
   const [scorecardLoading, setScorecardLoading] = useState(false)
   const [scorecardError, setScorecardError] = useState(null)
 
   const transcriptRef = useRef(transcript)
   const busyRef = useRef(false)
+  const callIdRef = useRef(0)
   const apiKeyRef = useRef(apiKey)
   const scenarioRef = useRef(scenario)
 
@@ -57,6 +68,7 @@ export default function App() {
       const trimmed = text.trim()
       if (!trimmed) return
 
+      const callId = callIdRef.current
       busyRef.current = true
       setCallError(null)
       const next = [...transcriptRef.current, { role: 'rep', text: trimmed, at: Date.now() }]
@@ -70,6 +82,7 @@ export default function App() {
           systemPrompt: buildProspectSystemPrompt(scenarioRef.current),
           contents: transcriptToContents(next),
         })
+        if (callId !== callIdRef.current) return
         const withReply = [...transcriptRef.current, { role: 'prospect', text: reply, at: Date.now() }]
         transcriptRef.current = withReply
         setTranscript(withReply)
@@ -81,9 +94,9 @@ export default function App() {
           })
         }
       } catch (err) {
-        setCallError(err.message)
+        if (callId === callIdRef.current) setCallError(err.message)
       } finally {
-        setThinking(false)
+        if (callId === callIdRef.current) setThinking(false)
         busyRef.current = false
       }
     },
@@ -102,27 +115,46 @@ export default function App() {
     else stop()
   }, [micOn, speaking, thinking, micSupported, start, stop])
 
-  const startCall = () => {
+  const resetCall = useCallback(() => {
+    callIdRef.current += 1
     setMicOn(false)
+    stop()
     cancelSpeech()
-    setTranscript([])
+    busyRef.current = false
     transcriptRef.current = []
+    setTranscript([])
+    setThinking(false)
+    setCallError(null)
+  }, [cancelSpeech, stop])
+
+  const randomizeProspect = useCallback(() => {
+    setScenario((prev) => ({ ...prev, ...randomProspect() }))
+  }, [])
+
+  const startCall = () => {
+    resetCall()
     setScorecard(null)
     setScorecardError(null)
     setCallError(apiKey ? null : 'Add your Gemini API key in the header to start the call.')
+    setCallActive(true)
     setTab('room')
   }
 
-  const generateScorecard = useCallback(async () => {
-    const convo = transcriptRef.current
+  const openTab = (next) => {
+    if (next === 'room' && !callActive) startCall()
+    else setTab(next)
+  }
+
+  const generateScorecard = useCallback(async (call) => {
+    if (!call) return
     setScorecardLoading(true)
     setScorecardError(null)
     try {
-      if (convo.length === 0) throw new Error('There is nothing to grade — the call had no dialogue.')
+      if (call.transcript.length === 0) throw new Error('There is nothing to grade — the call had no dialogue.')
       const raw = await callGemini({
         apiKey: apiKeyRef.current,
         systemPrompt: 'You are a precise sales-call grader. You always respond with valid JSON only.',
-        contents: [{ role: 'user', parts: [{ text: buildScorecardPrompt(scenarioRef.current, convo) }] }],
+        contents: [{ role: 'user', parts: [{ text: buildScorecardPrompt(call.scenario, call.transcript) }] }],
         temperature: 0.3,
       })
       setScorecard(parseJsonResponse(raw))
@@ -134,23 +166,26 @@ export default function App() {
   }, [])
 
   const endCall = () => {
-    setMicOn(false)
-    stop()
-    cancelSpeech()
+    const call = { transcript: transcriptRef.current, scenario: scenarioRef.current }
+    resetCall()
+    setCallActive(false)
+    setGradedCall(call)
+    randomizeProspect()
     setTab('scorecard')
-    generateScorecard()
+    generateScorecard(call)
   }
 
   return (
     <div className="min-h-full bg-ink">
       <Header apiKey={apiKey} onApiKeyChange={setApiKey} />
-      <Tabs active={tab} onChange={setTab} />
+      <Tabs active={tab} onChange={openTab} />
       <main className="mx-auto max-w-7xl px-6 py-6">
         {tab === 'setup' && (
           <SetupTab
             scenario={scenario}
             onChange={setScenario}
             onReset={() => setScenario(DEFAULT_SCENARIO)}
+            onRandomize={randomizeProspect}
             onStartCall={startCall}
             voices={voices}
           />
@@ -177,8 +212,8 @@ export default function App() {
             scorecard={scorecard}
             loading={scorecardLoading}
             error={scorecardError}
-            transcript={transcript}
-            onRegenerate={generateScorecard}
+            transcript={gradedCall?.transcript ?? []}
+            onRegenerate={() => generateScorecard(gradedCall)}
             onNewCall={() => setTab('setup')}
           />
         )}

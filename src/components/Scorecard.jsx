@@ -60,6 +60,10 @@ export default function Scorecard({ scorecard, loading, error, transcript, onReg
         <div className="card flex flex-col items-center justify-center gap-3 text-center">
           <p className="label !mb-0">Overall score</p>
           <p className={`text-6xl font-bold ${scoreColor(scorecard.overallScore)}`}>{scorecard.overallScore}</p>
+          <p className="text-[11px] leading-relaxed text-white/40">
+            Overall Score: Weighted average (0–100%). Each category is graded out of 100 points based on execution
+            precision.
+          </p>
           <span
             className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
               outcomeStyles[scorecard.outcome] ?? 'border-edge text-white/60'
