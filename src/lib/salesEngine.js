@@ -69,6 +69,8 @@ export const DEFAULT_SCENARIO = {
   primaryPain: 'Afternoon brain fog wipes out the second half of every working day.',
   hiddenObjection: 'Thinks the investment is too high and wants to "think about it".',
   budget: '£5,000 - £25,000',
+  prospectFocus:
+    'The 2pm cognitive wall, brain fog, and erratic daily output. They judge everything by whether it protects the back half of their day.',
   voiceRate: 1,
   voicePitch: 1,
 }
@@ -77,6 +79,7 @@ export function applyOffer(scenario, offerId) {
   const offer = OFFERS.find((o) => o.id === offerId) ?? OFFERS[0]
   return {
     ...scenario,
+    ...randomProspect(offer.id),
     offerId: offer.id,
     offerName: offer.offerName,
     offerDescription: offer.offerDescription,
@@ -118,40 +121,132 @@ const LAST_NAMES = [
   'Ravenscroft',
 ]
 
-const ROLES = [
-  { title: 'Hedge Fund Manager', company: 'Kestrel Capital Partners', industry: 'Systematic hedge fund', budget: '£50,000+' },
-  { title: 'Startup Founder', company: 'Northwind Labs', industry: 'Seed-stage SaaS', budget: '£1,000 - £5,000' },
-  { title: 'M&A Lawyer', company: 'Halloway & Frost LLP', industry: 'Corporate law', budget: '£5,000 - £20,000' },
-  { title: 'High-Ticket Coach', company: 'The Apex Method', industry: 'Online coaching', budget: '£5,000 - £15,000' },
-  { title: 'Angel Investor', company: 'Private family office', industry: 'Early-stage investing', budget: '£20,000 - £100,000' },
-  { title: 'Chief Revenue Officer', company: 'Veridian Group', industry: 'Enterprise software', budget: '£10,000 - £30,000' },
-  { title: 'Surgeon & Clinic Owner', company: 'Clearview Surgical', industry: 'Private healthcare', budget: '£5,000 - £25,000' },
-  { title: 'Property Developer', company: 'Ashgrove Estates', industry: 'Real estate development', budget: '£20,000 - £50,000' },
-]
-
-const PAINS = [
+const OPERATOR_PAINS = [
+  'Hits a hard cognitive wall at 2pm and the rest of the day is admin only.',
   'Afternoon brain fog erases the last four hours of every working day.',
-  'Crashes hard around 2pm and props the day up with caffeine.',
+  'Output is erratic — two sharp days, then one that produces nothing.',
   'Decision fatigue by mid-afternoon, so the hardest calls get pushed to tomorrow.',
-  'Sleeps badly, wakes wired-and-tired, and never feels sharp two days in a row.',
-  'Runs at full output for three days then loses a day to burnout.',
+  'Sleeps badly, wakes wired-and-tired, and never feels sharp two days running.',
   'Cannot hold deep focus long enough to do the strategic work only they can do.',
 ]
 
-const OBJECTIONS = [
+const OPERATOR_OBJECTIONS = [
   'Thinks the investment is too high and wants to "think about it".',
-  'Has tried supplements before and believes none of them worked.',
+  'Has tried nootropics and supplements before and believes none of them worked.',
   'Wants to run it past a partner or spouse before committing.',
   'Believes the timing is wrong and wants to revisit next quarter.',
-  'Doubts the founder can actually deliver at this stage of the company.',
   'Says they are too busy to add anything else to their routine.',
 ]
 
+const INVESTOR_OBJECTIONS = [
+  'Thinks the valuation is rich for the stage and wants a lower entry.',
+  'Has been burned by a consumer goods brand that could not hold its margins.',
+  'Doubts the founder can build distribution without a retail partner.',
+  'Wants to see repeat-purchase data before wiring anything.',
+  'Wants to run it past their investment committee or family office principal.',
+  'Says supplements are a crowded category with no defensible moat.',
+]
+
+const COFOUNDER_OBJECTIONS = [
+  'Thinks 20% with a 1-year cliff is thin for the risk they are taking.',
+  'Wants to know why the founder cannot hire this role instead of giving equity.',
+  'Has been burned by a previous co-founder split with no vesting protection.',
+  'Needs to know there is runway before leaving a well-paid role.',
+  'Wants a clear split of decision rights before saying yes.',
+]
+
+const COLD_OBJECTIONS = [
+  'Assumes this is a cold sales call and wants it over in thirty seconds.',
+  'Says "just email me" to get off the phone.',
+  'Claims they already have their health and performance handled.',
+  'Says they never take unsolicited calls on principle.',
+  'Is walking into another meeting and has no time for this.',
+]
+
+const ARCHETYPES = {
+  'founding-circle': {
+    focus:
+      'The 2pm cognitive wall, brain fog, and erratic daily output. They judge everything by whether it protects the back half of their day.',
+    roles: [
+      { title: 'High-Stakes Founder', company: 'Northwind Labs', industry: 'Series A SaaS', budget: '£1,000 - £5,000' },
+      { title: 'Hedge Fund Manager', company: 'Kestrel Capital Partners', industry: 'Systematic hedge fund', budget: '£50,000+' },
+      { title: 'M&A Lawyer', company: 'Halloway & Frost LLP', industry: 'Corporate law', budget: '£5,000 - £20,000' },
+      { title: 'Surgeon & Clinic Owner', company: 'Clearview Surgical', industry: 'Private healthcare', budget: '£5,000 - £25,000' },
+      { title: 'Executive Coach', company: 'The Apex Method', industry: 'Executive coaching', budget: '£5,000 - £15,000' },
+      { title: 'High-Volume Trader', company: 'Bellweather Trading', industry: 'Prop trading desk', budget: '£10,000 - £40,000' },
+    ],
+    pains: OPERATOR_PAINS,
+    objections: OPERATOR_OBJECTIONS,
+  },
+  investor: {
+    focus:
+      'Unit economics, 80%+ gross margins, valuation multiple, market size, and distribution velocity. They will interrogate the numbers before they care about the science.',
+    roles: [
+      { title: 'Angel Investor', company: 'Private syndicate', industry: 'Early-stage consumer', budget: '£20,000 - £100,000' },
+      { title: 'Family Office Director', company: 'Ravenscroft Family Office', industry: 'Multi-family office', budget: '£100,000+' },
+      { title: 'Biohacking VC Partner', company: 'Longevity Ventures', industry: 'Health & performance VC', budget: '£50,000 - £250,000' },
+      { title: 'Serial Consumer Goods Investor', company: 'Harborline Brands', industry: 'CPG roll-ups', budget: '£25,000 - £150,000' },
+      { title: 'Growth Fund Principal', company: 'Veridian Growth', industry: 'Consumer growth equity', budget: '£100,000+' },
+    ],
+    pains: [
+      'Their portfolio is heavy on software and light on high-margin consumer brands.',
+      'Has capital sitting idle and no conviction-grade deal this quarter.',
+      'Keeps seeing supplement decks with no repeat-purchase data behind them.',
+      'Personally runs out of cognitive gas mid-afternoon and knows the market is real.',
+      'Missed the last two winners in the performance-health category.',
+    ],
+    objections: INVESTOR_OBJECTIONS,
+  },
+  'co-founder': {
+    focus:
+      'Vision alignment, the equity cliff terms, the founder\u2019s execution track record, and where their own operating strengths actually plug in.',
+    roles: [
+      { title: 'Sales & Growth Lead', company: 'Meridian Commerce', industry: 'DTC growth', budget: 'Currently on £140k base + bonus' },
+      { title: 'Scaled Business Operator', company: 'Ashgrove Group', industry: 'Consumer operations', budget: 'Currently on £180k package' },
+      { title: 'Neuroscientist / R&D Director', company: 'Cortex Bio', industry: 'Cognitive science R&D', budget: 'Currently on £110k academic-industry salary' },
+      { title: 'Technical Co-Founder', company: 'Between ventures', industry: 'Consumer tech', budget: 'Living off a prior exit' },
+      { title: 'Head of Supply Chain', company: 'Baptiste Logistics', industry: 'Manufacturing & fulfilment', budget: 'Currently on £130k package' },
+    ],
+    pains: [
+      'Is building someone else\u2019s company and has no real ownership of the upside.',
+      'Has hit the ceiling of their current role and wants to run something.',
+      'Wants a category-defining mission instead of another incremental growth job.',
+      'Left the last venture because the founder could not make decisions.',
+      'Has the operating playbook but no product worth pointing it at.',
+    ],
+    objections: COFOUNDER_OBJECTIONS,
+  },
+  'cold-call': {
+    focus:
+      'Nothing — they have no context for this call. High skepticism, very short attention span, and everything hinges on whether the rep survives the pattern interrupt.',
+    roles: [
+      { title: 'Unaware Executive', company: 'Veridian Group', industry: 'Enterprise software', budget: 'Unknown — never discussed' },
+      { title: 'Busy Founder', company: 'Lindqvist & Co', industry: 'Bootstrapped agency', budget: 'Unknown — never discussed' },
+      { title: 'Distracted Regional Manager', company: 'Ashgrove Estates', industry: 'Property development', budget: 'Unknown — never discussed' },
+      { title: 'Operations Director', company: 'Farhadi Industries', industry: 'Manufacturing', budget: 'Unknown — never discussed' },
+      { title: 'Managing Partner', company: 'Delacroix Advisory', industry: 'Boutique consultancy', budget: 'Unknown — never discussed' },
+    ],
+    pains: OPERATOR_PAINS,
+    objections: COLD_OBJECTIONS,
+  },
+}
+
+const ARCHETYPE_BY_OFFER = {
+  'founding-circle': ARCHETYPES['founding-circle'],
+  'angel-investor': ARCHETYPES.investor,
+  'equity-partner': ARCHETYPES.investor,
+  'co-founder': ARCHETYPES['co-founder'],
+  'cold-call': ARCHETYPES['cold-call'],
+}
+
+const COLD_MOODS = ['Busy and impatient', 'Direct and blunt', 'Guarded and analytical']
+
 const pick = (list) => list[Math.floor(Math.random() * list.length)]
 
-export function randomProspect() {
+export function randomProspect(offerId) {
+  const archetype = ARCHETYPE_BY_OFFER[offerId] ?? ARCHETYPES['founding-circle']
   const gender = pick(GENDERS)
-  const role = pick(ROLES)
+  const role = pick(archetype.roles)
   return {
     prospectName: `${pick(FIRST_NAMES[gender])} ${pick(LAST_NAMES)}`,
     prospectGender: gender,
@@ -159,10 +254,11 @@ export function randomProspect() {
     prospectCompany: role.company,
     industry: role.industry,
     budget: role.budget,
-    mood: pick(MOODS),
+    prospectFocus: archetype.focus,
+    mood: pick(offerId === 'cold-call' ? COLD_MOODS : MOODS),
     difficulty: pick(DIFFICULTIES),
-    primaryPain: pick(PAINS),
-    hiddenObjection: pick(OBJECTIONS),
+    primaryPain: pick(archetype.pains),
+    hiddenObjection: pick(archetype.objections),
   }
 }
 
@@ -259,6 +355,7 @@ ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 - Current mood: ${s.mood}
 - Difficulty setting: ${s.difficulty} — ${difficultyGuidance[s.difficulty] ?? difficultyGuidance.Moderate}
 - Your biggest problem right now (do not volunteer it unprompted, make the rep dig): ${s.primaryPain}
+- What you actually care about on this call: ${s.prospectFocus}
 - Your hidden objection (surface it only when the rep gets close to a close): ${s.hiddenObjection}
 - Your budget reality: ${s.budget}
 
