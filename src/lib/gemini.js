@@ -94,7 +94,6 @@ export function parseJsonResponse(raw) {
   try {
     return JSON.parse(cleaned.slice(start, end + 1))
   } catch (err) {
-    // Fallback attempt to repair truncated JSON if output cuts off slightly
     const repaired = cleaned.slice(start) + '}'
     try {
       return JSON.parse(repaired)
