@@ -33,7 +33,7 @@ export default function Header({ apiKey, onApiKeyChange }) {
               type={visible ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => handleChange(e.target.value)}
-              placeholder="Gemini API key (gemini-2.5-flash)"
+              placeholder="Gemini API key (gemini-3.6-flash)"
               className="field w-full pl-9 pr-10 md:w-96"
               spellCheck={false}
             />

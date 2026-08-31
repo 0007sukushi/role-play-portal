@@ -35,4 +35,4 @@ The prospect prompt and the grader in `src/lib/salesEngine.js` encode:
 
 ## Stack
 
-Vite + React 19, Tailwind CSS 3, lucide-react, Gemini `gemini-2.5-flash`.
+Vite + React 19, Tailwind CSS 3, lucide-react, Gemini `gemini-3.6-flash`.
