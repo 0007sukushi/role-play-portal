@@ -90,7 +90,6 @@ export default function App() {
         const withReply = [...transcriptRef.current, { role: 'prospect', text: reply, at: Date.now() }]
         transcriptRef.current = withReply
         setTranscript(withReply)
-        // REPLACE WITH THIS:
         if (ttsSupported) {
           speak(reply)
         }
