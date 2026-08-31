@@ -91,11 +91,12 @@ export default function App() {
         transcriptRef.current = withReply
         setTranscript(withReply)
         if (ttsSupported) {
-          speak(reply, {
-            voiceURI: scenarioRef.current.voiceURI,
-            rate: Number(scenarioRef.current.voiceRate) || 1,
-            pitch: Number(scenarioRef.current.voicePitch) || 1,
-          })
+         speak(reply, {
+          gender: scenarioRef.current.gender || scenarioRef.current.prospectGender,
+          voiceURI: scenarioRef.current.voiceURI,
+          rate: Number(scenarioRef.current.voiceRate) || 1,
+          pitch: Number(scenarioRef.current.voicePitch) || 1,
+        })
         }
       } catch (err) {
         if (callId === callIdRef.current) setCallError(err.message)
