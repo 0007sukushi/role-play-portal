@@ -16,26 +16,27 @@ export function useSpeechSynthesis() {
     }
   }, [])
 
-  const speak = useCallback((text, { voiceURI, rate = 1, pitch = 1 } = {}) => {
+const speak = useCallback((text, { voiceURI, gender = 'Female', rate = 1, pitch = 1 } = {}) => {
     if (typeof window === 'undefined' || !window.speechSynthesis || !text) return
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
-   const allVoices = window.speechSynthesis.getVoices()
-    let selectedVoice = allVoices.find((v) => v.voiceURI === voiceURI)
-    
-    // Fallback: If no exact voice match, pick based on male/female voice name patterns
+
+    const allVoices = window.speechSynthesis.getVoices()
+    const isMale = gender.toLowerCase() === 'male' || /male|david|mark|george|james|richard|omar|marcus|dmitri|jordan/i.test(voiceURI || '')
+
+    let selectedVoice = isMale
+      ? allVoices.find((v) => /male|david|mark|george|james|richard|google uk english male/i.test(v.name))
+      : allVoices.find((v) => /female|zira|hazel|susan|google uk english female/i.test(v.name))
+
     if (!selectedVoice && voiceURI) {
-      const isMale = /male|jordan|alex|marcus|dmitri|idris|tobias|rajesh|callum|andre|hiro|sebastian|omar/i.test(voiceURI)
-      if (isMale) {
-        selectedVoice = allVoices.find((v) => /male|david|mark|george|james|richard|google uk english male/i.test(v.name))
-      } else {
-        selectedVoice = allVoices.find((v) => /female|zira|hazel|susan|google uk english female/i.test(v.name))
-      }
+      selectedVoice = allVoices.find((v) => v.voiceURI === voiceURI)
     }
-    
+
     if (selectedVoice) utterance.voice = selectedVoice
+
+    utterance.pitch = isMale ? 0.7 : 1.1
     utterance.rate = rate
-    utterance.pitch = pitch
+
     utterance.onstart = () => setSpeaking(true)
     utterance.onend = () => setSpeaking(false)
     utterance.onerror = () => setSpeaking(false)
