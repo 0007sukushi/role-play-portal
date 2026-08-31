@@ -90,12 +90,9 @@ export default function App() {
         const withReply = [...transcriptRef.current, { role: 'prospect', text: reply, at: Date.now() }]
         transcriptRef.current = withReply
         setTranscript(withReply)
+        // REPLACE WITH THIS:
         if (ttsSupported) {
-        speak(reply, {
-          voiceURI: scenarioRef.current.voiceURI,
-          rate: Number(scenarioRef.current.voiceRate) || 1,
-          pitch: Number(scenarioRef.current.voicePitch) || 1,
-        })
+          speak(reply)
         }
       } catch (err) {
         if (callId === callIdRef.current) setCallError(err.message)
