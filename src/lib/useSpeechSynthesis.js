@@ -16,25 +16,33 @@ export function useSpeechSynthesis() {
     }
   }, [])
 
-const speak = useCallback((text, { voiceURI, gender = 'Female', rate = 1, pitch = 1 } = {}) => {
+  const speak = useCallback((text, { voiceURI, gender = 'Female', rate = 1, pitch = 1 } = {}) => {
     if (typeof window === 'undefined' || !window.speechSynthesis || !text) return
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
 
     const allVoices = window.speechSynthesis.getVoices()
-    const isMale = gender.toLowerCase() === 'male' || /male|david|mark|george|james|richard|omar|marcus|dmitri|jordan/i.test(voiceURI || '')
+    const isMale = gender.toLowerCase() === 'male' || /male/i.test(voiceURI || '')
 
-    let selectedVoice = isMale
-      ? allVoices.find((v) => /male|david|mark|george|james|richard|google uk english male/i.test(v.name))
-      : allVoices.find((v) => /female|zira|hazel|susan|google uk english female/i.test(v.name))
+    let selectedVoice = null
 
+    if (isMale) {
+      // Find native Windows/Browser Male Voice
+      selectedVoice = allVoices.find((v) => /david|mark|george|james|richard|google uk english male/i.test(v.name))
+    } else {
+      // Find original clean Female Voice
+      selectedVoice = allVoices.find((v) => /zira|hazel|susan|google uk english female/i.test(v.name))
+    }
+
+    // Fall back to voiceURI match if defined, or default browser voice
     if (!selectedVoice && voiceURI) {
       selectedVoice = allVoices.find((v) => v.voiceURI === voiceURI)
     }
 
     if (selectedVoice) utterance.voice = selectedVoice
 
-    utterance.pitch = isMale ? 0.7 : 1.1
+    // Kept strictly at natural 1.0 pitch to stop all robotic audio warping
+    utterance.pitch = pitch
     utterance.rate = rate
 
     utterance.onstart = () => setSpeaking(true)
