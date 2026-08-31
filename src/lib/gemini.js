@@ -1,11 +1,10 @@
 export const PRIMARY_MODEL = 'gemini-3.6-flash'
 export const FALLBACK_MODEL = 'gemini-3.5-flash-lite'
 
-const MAX_ATTEMPTS = 3
-const BASE_DELAY_MS = 1000
+const MAX_ATTEMPTS = 2
+const BASE_DELAY_MS = 500
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504])
 
-// Ensures 'models/' prefix is properly formatted to prevent REST endpoint 404s
 const endpoint = (model) => {
   const modelPath = model.startsWith('models/') ? model : `models/${model}`
   return `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent`
@@ -20,7 +19,10 @@ async function requestModel({ model, apiKey, systemPrompt, contents, temperature
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents,
-      generationConfig: { temperature, maxOutputTokens: 2048 },
+      generationConfig: { 
+        temperature, 
+        maxOutputTokens: 512 // Reduced output window speeds up response latency
+      },
     }),
   })
 
@@ -52,18 +54,23 @@ export async function callGemini({ apiKey, systemPrompt, contents, temperature =
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
       try {
         const text = await requestModel({ model, apiKey, systemPrompt, contents, temperature })
-        if (model !== PRIMARY_MODEL) onNotice?.(`${PRIMARY_MODEL} was unavailable — answered with ${model}.`)
+        if (model !== PRIMARY_MODEL) onNotice?.(`${PRIMARY_MODEL} busy — failover to ${model}.`)
         return text
       } catch (err) {
         lastError = err
+        
+        // On 429 rate limit, break immediately to fallback model instead of freezing UI
+        if (err.status === 429 && model === PRIMARY_MODEL) {
+          onNotice?.(`Rate limit hit on ${PRIMARY_MODEL}. Instant switching to ${FALLBACK_MODEL}…`)
+          break
+        }
+
         if (!err.retryable) throw err
         if (attempt < MAX_ATTEMPTS - 1) {
-          onNotice?.(`${model} rate limited (${err.status}). Retrying in ${Math.round((BASE_DELAY_MS * 2 ** attempt) / 1000)}s…`)
-          await sleep(BASE_DELAY_MS * 2 ** attempt)
+          await sleep(BASE_DELAY_MS * (attempt + 1))
         }
       }
     }
-    if (model === PRIMARY_MODEL) onNotice?.(`Falling back to ${FALLBACK_MODEL}…`)
   }
 
   throw lastError
