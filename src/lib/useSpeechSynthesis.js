@@ -16,32 +16,20 @@ export function useSpeechSynthesis() {
     }
   }, [])
 
-  const speak = useCallback((text, { voiceURI, gender = 'Female', rate = 0.92, pitch = 1 } = {}) => {
+  const speak = useCallback((text, { voiceURI, rate = 1, pitch = 1 } = {}) => {
     if (typeof window === 'undefined' || !window.speechSynthesis || !text) return
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
 
-    const allVoices = window.speechSynthesis.getVoices()
-    const isMale = gender.toLowerCase() === 'male' || /male/i.test(voiceURI || '')
-
-    let selectedVoice = null
-
-    if (isMale) {
-      // Prioritize natural Google voices over robotic Windows SAPI voices
-      selectedVoice = allVoices.find((v) => /google uk english male|google us english male|david|mark/i.test(v.name))
-    } else {
-      selectedVoice = allVoices.find((v) => /google uk english female|google us english female|zira|hazel/i.test(v.name))
+    if (voiceURI) {
+      const selectedVoice = window.speechSynthesis
+        .getVoices()
+        .find((v) => v.voiceURI === voiceURI)
+      if (selectedVoice) utterance.voice = selectedVoice
     }
 
-    if (!selectedVoice && voiceURI) {
-      selectedVoice = allVoices.find((v) => v.voiceURI === voiceURI)
-    }
-
-    if (selectedVoice) utterance.voice = selectedVoice
-
-    // Slight rate slowdown humanizes stiff text-to-speech cadence
-    utterance.pitch = 1.0
-    utterance.rate = 0.92
+    utterance.rate = rate
+    utterance.pitch = pitch
 
     utterance.onstart = () => setSpeaking(true)
     utterance.onend = () => setSpeaking(false)
@@ -56,5 +44,11 @@ export function useSpeechSynthesis() {
     setSpeaking(false)
   }, [])
 
-  return { speak, cancel, speaking, voices, supported: typeof window !== 'undefined' && !!window.speechSynthesis }
+  return {
+    speak,
+    cancel,
+    speaking,
+    voices,
+    supported: typeof window !== 'undefined' && !!window.speechSynthesis,
+  }
 }
