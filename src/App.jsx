@@ -160,6 +160,7 @@ export default function App() {
         systemPrompt: 'You are a precise sales-call grader. You always respond with valid JSON only.',
         contents: [{ role: 'user', parts: [{ text: buildScorecardPrompt(call.scenario, call.transcript) }] }],
         temperature: 0.3,
+        maxTokens: 2048,
       })
       setScorecard(parseJsonResponse(raw))
     } catch (err) {
