@@ -91,7 +91,11 @@ export default function App() {
         transcriptRef.current = withReply
         setTranscript(withReply)
         if (ttsSupported) {
-          speak(reply)
+          // NOTE: assumes scenario carries a gender field (e.g. scenario.gender:
+          // 'male' | 'female'). Adjust the key below to match your salesEngine
+          // scenario shape if it's named differently.
+          const prospectGender = scenarioRef.current.gender === 'male' ? 'male' : 'female'
+          speak(reply, { gender: prospectGender })
         }
       } catch (err) {
         if (callId === callIdRef.current) setCallError(err.message)
