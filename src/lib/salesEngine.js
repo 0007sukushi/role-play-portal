@@ -199,7 +199,7 @@ const ARCHETYPES = {
   },
   'co-founder': {
     focus:
-      'Vision alignment, the equity cliff terms, the founder\u2019s execution track record, and where their own operating strengths actually plug in.',
+      'Vision alignment, the equity cliff terms, the founder’s execution track record, and where their own operating strengths actually plug in.',
     roles: [
       { title: 'Sales & Growth Lead', company: 'Meridian Commerce', industry: 'DTC growth', budget: 'Currently on £140k base + bonus' },
       { title: 'Scaled Business Operator', company: 'Ashgrove Group', industry: 'Consumer operations', budget: 'Currently on £180k package' },
@@ -208,7 +208,7 @@ const ARCHETYPES = {
       { title: 'Head of Supply Chain', company: 'Baptiste Logistics', industry: 'Manufacturing & fulfilment', budget: 'Currently on £130k package' },
     ],
     pains: [
-      'Is building someone else\u2019s company and has no real ownership of the upside.',
+      'Is building someone else’s company and has no real ownership of the upside.',
       'Has hit the ceiling of their current role and wants to run something.',
       'Wants a category-defining mission instead of another incremental growth job.',
       'Left the last venture because the founder could not make decisions.',
@@ -271,7 +271,7 @@ export const DISCOVERY_PROTOCOL = [
   {
     step: 2,
     title: 'Repeat their exact words',
-    detail: 'Mirror the prospect\u2019s own language back to them so they hear their problem clearly (Chris Voss mirroring).',
+    detail: 'Mirror the prospect’s own language back to them so they hear their problem clearly (Chris Voss mirroring).',
   },
   {
     step: 3,
@@ -280,7 +280,7 @@ export const DISCOVERY_PROTOCOL = [
   },
   {
     step: 4,
-    title: 'Solution \u2192 Feature \u2192 Outcome',
+    title: 'Solution → Feature → Outcome',
     detail: 'Present the solution, tie it to a specific feature, and land on the outcome in revenue and neural wealth (freedom, clarity, peace of mind).',
   },
 ]
@@ -299,14 +299,14 @@ export const CORE_PRINCIPLES = [
   'Selling is clarification, not convincing.',
   'People move to escape pain far faster than to chase pleasure.',
   'Frame questions for "No" to preserve prospect autonomy — "Would you be against moving forward?"',
-  'Use embedded commands — "I don\u2019t want you to decide too quickly before you know everything about Astraura."',
+  'Use embedded commands — "I don’t want you to decide too quickly before you know everything about Astraura."',
   'Always say "investment", never "price" or "cost".',
 ]
 
 export const SOURCE_BOOKS = [
   {
     title: 'Never Split the Difference — Chris Voss',
-    detail: 'Tactical empathy, mirroring, labeling ("It sounds like\u2026"), calibrated "How / What" questions, the "That\u2019s right" moment, and no-oriented questions.',
+    detail: 'Tactical empathy, mirroring, labeling ("It sounds like…"), calibrated "How / What" questions, the "That’s right" moment, and no-oriented questions.',
   },
   {
     title: 'Straight Line Persuasion — Jeb Blount / Alex Hormozi',
@@ -366,10 +366,10 @@ ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 - The rep's goal on this call: ${s.callGoal}
 
 # HOW TO BEHAVE
-- Speak like a real human on a video call: 1\u20133 short sentences, conversational, sometimes hesitant. Never bullet points, never markdown, never stage directions.
+- Speak like a real human on a video call: 1–3 short sentences, conversational, sometimes hesitant. Never bullet points, never markdown, never stage directions.
 - Reward good selling and punish bad selling. If the rep pitches before discovering your pain, get resistant. If the rep asks sharp, calibrated questions, open up.
 - Raise objections naturally ("that's a lot of money", "I need to think about it", "I've tried something like this before", "let me talk to my partner").
-- If the rep handles an objection using Acknowledge \u2192 Ask for context \u2192 Answer the limiting belief \u2192 Reframe the investment against the 6-month cost of inaction, your certainty should visibly increase and you should say so in your own words.
+- If the rep handles an objection using Acknowledge → Ask for context → Answer the limiting belief → Reframe the investment against the 6-month cost of inaction, your certainty should visibly increase and you should say so in your own words.
 - If the rep says "price" or "cost" about the offer instead of "investment", you may become slightly more price-focused.
 - You are allowed to agree and buy when the rep has genuinely earned it. Say so plainly ("okay, let's do it").
 - Never coach the rep, never evaluate them, never mention frameworks. You are the prospect.
@@ -379,7 +379,7 @@ ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 1. Ask the biggest problem.
 2. Repeat the prospect's exact words back.
 3. Highlight the 6-month consequence of inaction.
-4. Solution \u2192 Feature \u2192 Outcome (revenue and neural wealth).
+4. Solution → Feature → Outcome (revenue and neural wealth).
 
 ## AAAR Objection Framework
 ${AAAR_FRAMEWORK.map((a) => `- ${a.step}: ${a.detail}`).join('\n')}
@@ -391,6 +391,31 @@ ${CORE_PRINCIPLES.map((p) => `- ${p}`).join('\n')}
 ${SOURCE_BOOKS.map((b) => `- ${b.title}: ${b.detail}`).join('\n')}
 
 Respond ONLY with what ${s.prospectName} says out loud.`
+}
+
+export function buildMasterRepSystemPrompt(scenario) {
+  const s = { ...DEFAULT_SCENARIO, ...scenario }
+  return `You are an ELITE TOP-1% HIGH-TICKET SALES CLOSER for Astraura. You are leading a live sales call with a prospect.
+
+PROSPECT DETAILS:
+- Name: ${s.prospectName}
+- Role: ${s.prospectRole} at ${s.prospectCompany}
+- Problem/Pain: ${s.primaryPain}
+- Stated Objection: ${s.hiddenObjection}
+
+YOUR SALES EXECUTION GOAL:
+1. Open warmly, build rapid rapport, and maintain absolute authority and calm certainty (Straight Line System).
+2. Execute the 4-Step Discovery Protocol:
+   - Ask for their biggest operational/cognitive problem.
+   - Mirror their exact key words (FBI style Chris Voss mirroring).
+   - Ask about the 6-month cost of inaction or long-term consequence if left unaddressed.
+   - Present Astraura: Solution -> Feature -> Outcome (restoring neural wealth and high-velocity focus).
+3. If the prospect presents an objection (co-founder, price, timing, thinking about it), seamlessly execute the AAAR framework:
+   - Acknowledge (validate without defending)
+   - Ask for context
+   - Answer the limiting belief
+   - Reframe investment vs cost of inaction
+4. Keep responses sharp, realistic, dynamic, and conversational (1-3 sentences per response). Speak like a human sales prodigy. Never break character.`
 }
 
 export function buildScorecardPrompt(scenario, transcript) {
@@ -409,13 +434,11 @@ Call type: ${
 The rep's goal: ${s.callGoal}
 Terms on the table: ${s.terms}
 
-Each category is graded out of 100 on execution precision, and "overallScore" is the weighted average of those categories (0-100).
-
-Score the rep against this system:
-- 4-Step Discovery Protocol: (1) asked biggest problem, (2) repeated exact words, (3) highlighted the 6-month consequence of inaction, (4) Solution \u2192 Feature \u2192 Outcome framed as revenue and neural wealth.
-- AAAR Objection Framework: Acknowledge, Ask for context, Answer the limiting belief, Reframe investment vs. 6-month cost of inaction.
-- Core principles: selling is clarification not convincing; escape pain over pleasure; no-oriented questions that preserve autonomy; embedded commands; always "investment" never "price/cost".
-- Book principles: Never Split the Difference (tactical empathy, mirroring, labeling, calibrated questions), Straight Line Persuasion (certainty in product/operator/company, looping), SPIN Selling (Situation, Problem, Implication, Need-payoff).
+EVALUATION RULES FOR DISCOVERY STEPS (BE FAIR & FLEXIBLE):
+1. "Asked biggest problem": Mark true if rep explicitly inquired about the prospect's daily struggle, main bottleneck, or 2pm afternoon crash.
+2. "Repeated exact words": Mark true if rep repeated or mirrored any key phrases, pain points, or exact words used by the prospect.
+3. "Highlighted 6-month consequence": Mark TRUE if rep probed the future trajectory, long-term impact, 6-month cost of inaction, or where things stand in half a year if nothing changes. (Do NOT require the literal exact phrase "6 months" if the long-term temporal consequence was asked).
+4. "Solution -> Feature -> Outcome": Mark true if rep tied Astraura back to solving the prospect's specific stated friction point.
 
 TRANSCRIPT:
 ${convo || '(no conversation took place)'}

@@ -1,100 +1,90 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export function useSpeechSynthesis() {
-  const [speaking, setSpeaking] = useState(false)
-  const [voices, setVoices] = useState([])
-  const utteranceRef = useRef(null)
+export function useSpeechRecognition({ onFinalResult }) {
+  const [listening, setListening] = useState(false)
+  const [interim, setInterim] = useState('')
+  const recognitionRef = useRef(null)
+  const silenceTimerRef = useRef(null)
+  const accumulatedTextRef = useRef('')
 
-  const loadVoices = useCallback(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return []
-    const available = window.speechSynthesis.getVoices()
-    if (available.length > 0) {
-      setVoices(available)
+  const stop = useCallback(() => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop()
+      } catch {}
     }
-    return available
+    setListening(false)
   }, [])
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return undefined
+  const start = useCallback(() => {
+    if (typeof window === 'undefined') return
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) return
 
-    loadVoices()
-    window.speechSynthesis.onvoiceschanged = loadVoices
+    stop()
+    accumulatedTextRef.current = ''
+    setInterim('')
 
-    return () => {
-      window.speechSynthesis.cancel()
-    }
-  }, [loadVoices])
+    const rec = new SpeechRecognition()
+    rec.continuous = true
+    rec.interimResults = true
+    rec.lang = 'en-US'
 
-  const speak = useCallback((text, options = {}) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis || !text) return
-    window.speechSynthesis.cancel()
+    rec.onstart = () => setListening(true)
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    
-    let available = window.speechSynthesis.getVoices()
-    if (!available.length) available = voices
+    rec.onresult = (e) => {
+      let currentInterim = ''
+      let newFinals = ''
 
-    const rawGender = String(options.gender || options.prospectGender || '').toLowerCase()
-    const isMale = rawGender === 'male' || options.isMale === true
-
-    let selectedVoice = null
-
-    if (isMale) {
-      // 1. Edge Male Natural Voices
-      selectedVoice = available.find((v) =>
-        /guy online|christopher online|eric online|ryan online|steffan online/i.test(v.name)
-      )
-      // 2. Generic Male Fallback (Excluding Microsoft David)
-      if (!selectedVoice) {
-        selectedVoice = available.find((v) =>
-          /male|guy|christopher|eric|george|richard/i.test(v.name) && !/david/i.test(v.name)
-        )
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcriptText = e.results[i][0].transcript
+        if (e.results[i].isFinal) {
+          newFinals += transcriptText + ' '
+        } else {
+          currentInterim += transcriptText
+        }
       }
-    } else {
-      // 1. Edge Female Natural Voices
-      selectedVoice = available.find((v) =>
-        /libby online|sonia online|jenny online|maisie online|aria online/i.test(v.name)
-      )
-      // 2. Generic Female Fallback
-      if (!selectedVoice) {
-        selectedVoice = available.find((v) =>
-          /female|libby|sonia|jenny|maisie|zira|hazel/i.test(v.name)
-        )
+
+      if (newFinals) {
+        accumulatedTextRef.current += newFinals
       }
+
+      setInterim(accumulatedTextRef.current + currentInterim)
+
+      // Clear existing silence timer and set a 1.5s delay before sending
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+      
+      silenceTimerRef.current = setTimeout(() => {
+        const fullTranscript = (accumulatedTextRef.current + currentInterim).trim()
+        if (fullTranscript && onFinalResult) {
+          onFinalResult(fullTranscript)
+          accumulatedTextRef.current = ''
+          setInterim('')
+        }
+      }, 1500) // 1.5 second silence tolerance threshold
     }
 
-    // 3. Absolute Fallback
-    if (!selectedVoice && available.length > 0) {
-      selectedVoice = available.find((v) => !/david/i.test(v.name)) || available[0]
+    rec.onerror = (e) => {
+      if (e.error !== 'no-speech') console.warn('[SpeechRec Error]:', e.error)
     }
 
-    if (selectedVoice) {
-      utterance.voice = selectedVoice
-      console.log(`[TTS Active Voice]: ${selectedVoice.name} | Targeted Gender: ${isMale ? 'Male' : 'Female'}`)
+    rec.onend = () => {
+      // Auto restart continuous listening if mic active flag is still on
+      setListening(false)
     }
 
-    utterance.rate = 1.0
-    utterance.pitch = 1.0
-
-    utterance.onstart = () => setSpeaking(true)
-    utterance.onend = () => setSpeaking(false)
-    utterance.onerror = () => setSpeaking(false)
-
-    utteranceRef.current = utterance
-    window.speechSynthesis.speak(utterance)
-  }, [voices])
-
-  const cancel = useCallback(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    setSpeaking(false)
-  }, [])
+    recognitionRef.current = rec
+    try {
+      rec.start()
+    } catch {}
+  }, [onFinalResult, stop])
 
   return {
-    speak,
-    cancel,
-    speaking,
-    voices,
-    supported: typeof window !== 'undefined' && !!window.speechSynthesis,
+    listening,
+    interim,
+    start,
+    stop,
+    supported: typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition),
   }
 }
