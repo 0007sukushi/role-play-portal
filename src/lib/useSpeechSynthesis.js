@@ -61,6 +61,12 @@ function pickBestVoice(voices, gender) {
     return Number(a.localService) - Number(b.localService)
   })
 
+  // TEMP DEBUG — remove once voice selection is confirmed working.
+  console.log(
+    `[voice-debug] gender="${gender}" pool=${pool.length} top5:`,
+    ranked.slice(0, 5).map((v) => v.name),
+  )
+
   return ranked[0] ?? pool[0]
 }
 
