@@ -30,34 +30,32 @@ export function useSpeechSynthesis() {
     window.speechSynthesis.cancel()
 
     const utterance = new SpeechSynthesisUtterance(text)
+    
+    // Always fetch fresh list in case onvoiceschanged loaded late
     let available = window.speechSynthesis.getVoices()
     if (!available.length) available = voices
 
-    const isMale = options.gender?.toLowerCase() === 'male' || options.isMale
+    const isMale = options.gender?.toLowerCase() === 'male' || options.isMale === true
 
-    // 1. Target Edge's High-Quality Online Natural Voices First
+    // 1. Precise Match: Edge Free Online Natural Voices
     let selectedVoice = available.find((v) =>
       isMale
-        ? /Guy Online \(Natural\)|Christopher Online \(Natural\)|Eric Online \(Natural\)/i.test(v.name)
-        : /Libby Online \(Natural\)|Sonia Online \(Natural\)|Jenny Online \(Natural\)|Maisie Online \(Natural\)/i.test(v.name)
+        ? /guy.*online|christopher.*online|eric.*online|natural.*male/i.test(v.name)
+        : /libby.*online|sonia.*online|jenny.*online|maisie.*online|natural.*female/i.test(v.name)
     )
 
-    // 2. Fallback to any generic Natural voice
+    // 2. Loose Match: Any Natural / Online voice for requested gender
     if (!selectedVoice) {
       selectedVoice = available.find((v) =>
         isMale
-          ? /natural.*male|male.*natural/i.test(v.name)
-          : /natural.*female|female.*natural/i.test(v.name)
+          ? /guy|christopher|eric|george/i.test(v.name) && !/david/i.test(v.name)
+          : /libby|sonia|jenny|maisie|zira|hazel/i.test(v.name)
       )
     }
 
-    // 3. Fallback to standard female/male names (excluding robotic local SAPI drivers like Microsoft David)
-    if (!selectedVoice) {
-      selectedVoice = available.find((v) =>
-        isMale
-          ? /george|richard|guy|natural/i.test(v.name) && !/david/i.test(v.name)
-          : /zira|hazel|libby|jennifer|female/i.test(v.name)
-      )
+    // 3. Absolute Fallback: Any voice that is NOT Microsoft David
+    if (!selectedVoice && available.length > 0) {
+      selectedVoice = available.find((v) => !/david/i.test(v.name)) || available[0]
     }
 
     if (selectedVoice) {
