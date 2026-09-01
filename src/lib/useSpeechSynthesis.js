@@ -31,35 +31,46 @@ export function useSpeechSynthesis() {
 
     const utterance = new SpeechSynthesisUtterance(text)
     
-    // Always fetch fresh list in case onvoiceschanged loaded late
     let available = window.speechSynthesis.getVoices()
     if (!available.length) available = voices
 
-    const isMale = options.gender?.toLowerCase() === 'male' || options.isMale === true
+    const rawGender = String(options.gender || options.prospectGender || '').toLowerCase()
+    const isMale = rawGender === 'male' || options.isMale === true
 
-    // 1. Precise Match: Edge Free Online Natural Voices
-    let selectedVoice = available.find((v) =>
-      isMale
-        ? /guy.*online|christopher.*online|eric.*online|natural.*male/i.test(v.name)
-        : /libby.*online|sonia.*online|jenny.*online|maisie.*online|natural.*female/i.test(v.name)
-    )
+    let selectedVoice = null
 
-    // 2. Loose Match: Any Natural / Online voice for requested gender
-    if (!selectedVoice) {
+    if (isMale) {
+      // 1. Edge Male Natural Voices
       selectedVoice = available.find((v) =>
-        isMale
-          ? /guy|christopher|eric|george/i.test(v.name) && !/david/i.test(v.name)
-          : /libby|sonia|jenny|maisie|zira|hazel/i.test(v.name)
+        /guy online|christopher online|eric online|ryan online|steffan online/i.test(v.name)
       )
+      // 2. Generic Male Fallback (Excluding Microsoft David)
+      if (!selectedVoice) {
+        selectedVoice = available.find((v) =>
+          /male|guy|christopher|eric|george|richard/i.test(v.name) && !/david/i.test(v.name)
+        )
+      }
+    } else {
+      // 1. Edge Female Natural Voices
+      selectedVoice = available.find((v) =>
+        /libby online|sonia online|jenny online|maisie online|aria online/i.test(v.name)
+      )
+      // 2. Generic Female Fallback
+      if (!selectedVoice) {
+        selectedVoice = available.find((v) =>
+          /female|libby|sonia|jenny|maisie|zira|hazel/i.test(v.name)
+        )
+      }
     }
 
-    // 3. Absolute Fallback: Any voice that is NOT Microsoft David
+    // 3. Absolute Fallback
     if (!selectedVoice && available.length > 0) {
       selectedVoice = available.find((v) => !/david/i.test(v.name)) || available[0]
     }
 
     if (selectedVoice) {
       utterance.voice = selectedVoice
+      console.log(`[TTS Active Voice]: ${selectedVoice.name} | Targeted Gender: ${isMale ? 'Male' : 'Female'}`)
     }
 
     utterance.rate = 1.0

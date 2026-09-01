@@ -90,11 +90,11 @@ export default function App() {
         const withReply = [...transcriptRef.current, { role: 'prospect', text: reply, at: Date.now() }]
         transcriptRef.current = withReply
         setTranscript(withReply)
+
         if (ttsSupported) {
-          // NOTE: assumes scenario carries a gender field (e.g. scenario.gender:
-          // 'male' | 'female'). Adjust the key below to match your salesEngine
-          // scenario shape if it's named differently.
-          const prospectGender = scenarioRef.current.gender === 'male' ? 'male' : 'female'
+          // Normalize gender safely regardless of capitalization ("Male", "male", etc.)
+          const rawGender = String(scenarioRef.current?.gender || scenarioRef.current?.prospect?.gender || '').toLowerCase()
+          const prospectGender = rawGender === 'male' ? 'male' : 'female'
           speak(reply, { gender: prospectGender })
         }
       } catch (err) {
