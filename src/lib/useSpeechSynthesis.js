@@ -14,18 +14,28 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 // than local SAPI voices like "Microsoft David" or "Microsoft Zira". We rank by
 // name match first, then prefer any remaining non-local (network) voice over a
 // local one.
+// Edge's "Online (Natural)" voices are neural TTS (real cloud rendering) and sound
+// far more human than anything Chrome exposes — they're checked first. Google's
+// network voices are the fallback for Chrome. Old local SAPI voices (George,
+// Hazel, David, Zira) are last resort only.
 const FEMALE_VOICE_PRIORITY = [
+  /Microsoft Libby Online \(Natural\)/i,
+  /Microsoft Aria Online \(Natural\)/i,
   /Google UK English Female/i,
   /Google US English/i, // Chrome's default Google voice is female-presenting
   /Samantha/i,
   /Microsoft Zira/i,
+  /Microsoft Hazel/i,
   /female/i,
 ]
 
 const MALE_VOICE_PRIORITY = [
+  /Microsoft Guy Online \(Natural\)/i,
+  /Microsoft Ryan Online \(Natural\)/i,
   /Google UK English Male/i,
   /Daniel/i,
   /Microsoft David/i,
+  /Microsoft George/i,
   /male/i,
 ]
 
