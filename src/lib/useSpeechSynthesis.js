@@ -1,90 +1,41 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export function useSpeechRecognition({ onFinalResult }) {
-  const [listening, setListening] = useState(false)
-  const [interim, setInterim] = useState('')
-  const recognitionRef = useRef(null)
-  const silenceTimerRef = useRef(null)
-  const accumulatedTextRef = useRef('')
+export function useSpeechSynthesis() {
+  const [speaking, setSpeaking] = useState(false)
+  const [voices, setVoices] = useState([])
+  const utteranceRef = useRef(null)
 
-  const stop = useCallback(() => {
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop()
-      } catch {}
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return undefined
+    const load = () => setVoices(window.speechSynthesis.getVoices())
+    load()
+    window.speechSynthesis.addEventListener('voiceschanged', load)
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', load)
+      window.speechSynthesis.cancel()
     }
-    setListening(false)
   }, [])
 
-  const start = useCallback(() => {
-    if (typeof window === 'undefined') return
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) return
+  const speak = useCallback((text, { voiceURI, rate = 1, pitch = 1 } = {}) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis || !text) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text)
+    const voice = window.speechSynthesis.getVoices().find((v) => v.voiceURI === voiceURI)
+    if (voice) utterance.voice = voice
+    utterance.rate = rate
+    utterance.pitch = pitch
+    utterance.onstart = () => setSpeaking(true)
+    utterance.onend = () => setSpeaking(false)
+    utterance.onerror = () => setSpeaking(false)
+    utteranceRef.current = utterance
+    window.speechSynthesis.speak(utterance)
+  }, [])
 
-    stop()
-    accumulatedTextRef.current = ''
-    setInterim('')
+  const cancel = useCallback(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    setSpeaking(false)
+  }, [])
 
-    const rec = new SpeechRecognition()
-    rec.continuous = true
-    rec.interimResults = true
-    rec.lang = 'en-US'
-
-    rec.onstart = () => setListening(true)
-
-    rec.onresult = (e) => {
-      let currentInterim = ''
-      let newFinals = ''
-
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const transcriptText = e.results[i][0].transcript
-        if (e.results[i].isFinal) {
-          newFinals += transcriptText + ' '
-        } else {
-          currentInterim += transcriptText
-        }
-      }
-
-      if (newFinals) {
-        accumulatedTextRef.current += newFinals
-      }
-
-      setInterim(accumulatedTextRef.current + currentInterim)
-
-      // Clear existing silence timer and set a 1.5s delay before sending
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-      
-      silenceTimerRef.current = setTimeout(() => {
-        const fullTranscript = (accumulatedTextRef.current + currentInterim).trim()
-        if (fullTranscript && onFinalResult) {
-          onFinalResult(fullTranscript)
-          accumulatedTextRef.current = ''
-          setInterim('')
-        }
-      }, 1500) // 1.5 second silence tolerance threshold
-    }
-
-    rec.onerror = (e) => {
-      if (e.error !== 'no-speech') console.warn('[SpeechRec Error]:', e.error)
-    }
-
-    rec.onend = () => {
-      // Auto restart continuous listening if mic active flag is still on
-      setListening(false)
-    }
-
-    recognitionRef.current = rec
-    try {
-      rec.start()
-    } catch {}
-  }, [onFinalResult, stop])
-
-  return {
-    listening,
-    interim,
-    start,
-    stop,
-    supported: typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition),
-  }
+  return { speak, cancel, speaking, voices, supported: typeof window !== 'undefined' && !!window.speechSynthesis }
 }

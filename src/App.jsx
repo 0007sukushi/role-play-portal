@@ -1,283 +1,227 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import Header from './components/Header'
+import Tabs from './components/Tabs'
+import SetupTab from './components/SetupTab'
+import ZoomRoom from './components/ZoomRoom'
+import Scorecard from './components/Scorecard'
 import {
-  OFFERS,
   DEFAULT_SCENARIO,
-  applyOffer,
   buildProspectSystemPrompt,
-  buildMasterRepSystemPrompt,
   buildScorecardPrompt,
+  randomProspect,
 } from './lib/salesEngine'
-import { sendChatMessage } from './lib/gemini'
-import { useSpeechSynthesis } from './lib/useSpeechSynthesis'
+import { callGemini, parseJsonResponse, transcriptToContents } from './lib/gemini'
 import { useSpeechRecognition } from './lib/useSpeechRecognition'
+import { useSpeechSynthesis } from './lib/useSpeechSynthesis'
+
+const API_KEY_STORAGE = 'rpp.geminiApiKey'
+const SCENARIO_STORAGE = 'rpp.scenario'
+
+function loadStored(key, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
 
 export default function App() {
-  const [scenario, setScenario] = useState(DEFAULT_SCENARIO)
-  const [userRole, setUserRole] = useState('rep') // 'rep' (User Sells) or 'prospect' (AI Sells)
+  const [tab, setTab] = useState('setup')
+  const [apiKey, setApiKey] = useState(() => loadStored(API_KEY_STORAGE, ''))
+  const [scenario, setScenario] = useState(() => {
+    const stored = loadStored(SCENARIO_STORAGE, {})
+    return stored.offerId ? { ...DEFAULT_SCENARIO, ...stored } : DEFAULT_SCENARIO
+  })
   const [transcript, setTranscript] = useState([])
-  const [isCallActive, setIsCallActive] = useState(false)
-  const [isAiThinking, setIsAiThinking] = useState(false)
+  const [callActive, setCallActive] = useState(false)
+  const [thinking, setThinking] = useState(false)
+  const [callError, setCallError] = useState(null)
+  const [gradedCall, setGradedCall] = useState(null)
   const [scorecard, setScorecard] = useState(null)
-  const [isEvaluating, setIsEvaluating] = useState(false)
+  const [scorecardLoading, setScorecardLoading] = useState(false)
+  const [scorecardError, setScorecardError] = useState(null)
 
-  const { speak, stop: stopSpeech, isSpeaking } = useSpeechSynthesis()
-  const { transcript: liveInput, resetTranscript, startListening, stopListening, listening } = useSpeechRecognition()
-
-  const chatContainerRef = useRef(null)
+  const transcriptRef = useRef(transcript)
+  const busyRef = useRef(false)
+  const callIdRef = useRef(0)
+  const apiKeyRef = useRef(apiKey)
+  const scenarioRef = useRef(scenario)
 
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-    }
-  }, [transcript, liveInput])
+    transcriptRef.current = transcript
+  }, [transcript])
+  useEffect(() => {
+    apiKeyRef.current = apiKey
+    window.localStorage.setItem(API_KEY_STORAGE, JSON.stringify(apiKey))
+  }, [apiKey])
+  useEffect(() => {
+    scenarioRef.current = scenario
+    window.localStorage.setItem(SCENARIO_STORAGE, JSON.stringify(scenario))
+  }, [scenario])
 
-  const handleOfferChange = (offerId) => {
-    setScenario((prev) => applyOffer(prev, offerId))
-    handleEndCall()
-  }
+  const { speak, cancel: cancelSpeech, speaking, voices, supported: ttsSupported } = useSpeechSynthesis()
 
-  const handleRoleToggle = (role) => {
-    setUserRole(role)
-    handleEndCall()
-  }
+  const sendToProspect = useCallback(
+    async (text) => {
+      if (busyRef.current) return
+      const trimmed = text.trim()
+      if (!trimmed) return
 
-  const handleStartCall = async () => {
-    setTranscript([])
-    setScorecard(null)
-    setIsCallActive(true)
+      const callId = callIdRef.current
+      busyRef.current = true
+      setCallError(null)
+      const next = [...transcriptRef.current, { role: 'rep', text: trimmed, at: Date.now() }]
+      transcriptRef.current = next
+      setTranscript(next)
+      setThinking(true)
 
-    // Select correct system prompt based on active role
-    const systemPrompt = userRole === 'rep' 
-      ? buildProspectSystemPrompt(scenario) 
-      : buildMasterRepSystemPrompt(scenario)
-
-    setIsAiThinking(true)
-
-    try {
-      // Opening line from AI
-      const initialPrompt = userRole === 'rep'
-        ? (scenario.mode === 'cold' ? 'Answer the phone as the prospect.' : 'Say hello as the prospect starting the scheduled call.')
-        : 'Open the call as the elite sales closer from Astraura.'
-
-      const response = await sendChatMessage(systemPrompt, [], initialPrompt)
-      
-      const aiRole = userRole === 'rep' ? 'prospect' : 'rep'
-      setTranscript([{ role: aiRole, text: response }])
-      
-      speak(response, scenario.prospectGender)
-    } catch (err) {
-      console.error('Failed to start call:', err)
-    } finally {
-      setIsAiThinking(false)
-    }
-  }
-
-  const handleSendUserMessage = async (userText) => {
-    if (!userText.trim() || isAiThinking) return
-
-    stopSpeech()
-    const currentRole = userRole // 'rep' or 'prospect'
-    const aiRole = userRole === 'rep' ? 'prospect' : 'rep'
-
-    const updatedTranscript = [...transcript, { role: currentRole, text: userText }]
-    setTranscript(updatedTranscript)
-    resetTranscript()
-    setIsAiThinking(true)
-
-    try {
-      const systemPrompt = userRole === 'rep' 
-        ? buildProspectSystemPrompt(scenario) 
-        : buildMasterRepSystemPrompt(scenario)
-
-      const response = await sendChatMessage(systemPrompt, updatedTranscript, userText)
-
-      setTranscript((prev) => [...prev, { role: aiRole, text: response }])
-      speak(response, scenario.prospectGender)
-    } catch (err) {
-      console.error('Failed to get AI response:', err)
-    } finally {
-      setIsAiThinking(false)
-    }
-  }
-
-  const handleEndCall = async () => {
-    stopSpeech()
-    stopListening()
-    setIsCallActive(false)
-
-    if (transcript.length > 1) {
-      setIsEvaluating(true)
       try {
-        const evalPrompt = buildScorecardPrompt(scenario, transcript)
-        const rawJson = await sendChatMessage('You are an expert sales analyst. Return raw JSON only.', [], evalPrompt)
-        const parsed = JSON.parse(rawJson.replace(/```json|```/g, '').trim())
-        setScorecard(parsed)
+        const reply = await callGemini({
+          apiKey: apiKeyRef.current,
+          systemPrompt: buildProspectSystemPrompt(scenarioRef.current),
+          contents: transcriptToContents(next),
+          onNotice: (notice) => {
+            if (callId === callIdRef.current) setCallError(notice)
+          },
+        })
+        if (callId !== callIdRef.current) return
+        setCallError(null)
+        const withReply = [...transcriptRef.current, { role: 'prospect', text: reply, at: Date.now() }]
+        transcriptRef.current = withReply
+        setTranscript(withReply)
+        if (ttsSupported) {
+          speak(reply, {
+            voiceURI: scenarioRef.current.voiceURI,
+            rate: Number(scenarioRef.current.voiceRate) || 1,
+            pitch: Number(scenarioRef.current.voicePitch) || 1,
+          })
+        }
       } catch (err) {
-        console.error('Failed to generate scorecard:', err)
+        if (callId === callIdRef.current) setCallError(err.message)
       } finally {
-        setIsEvaluating(false)
+        if (callId === callIdRef.current) setThinking(false)
+        busyRef.current = false
       }
+    },
+    [speak, ttsSupported],
+  )
+
+  const { listening, interim, start, stop, supported: micSupported } = useSpeechRecognition({
+    onFinalResult: sendToProspect,
+  })
+
+  const [micOn, setMicOn] = useState(false)
+
+  useEffect(() => {
+    if (!micSupported) return
+    if (micOn && !speaking && !thinking) start()
+    else stop()
+  }, [micOn, speaking, thinking, micSupported, start, stop])
+
+  const resetCall = useCallback(() => {
+    callIdRef.current += 1
+    setMicOn(false)
+    stop()
+    cancelSpeech()
+    busyRef.current = false
+    transcriptRef.current = []
+    setTranscript([])
+    setThinking(false)
+    setCallError(null)
+  }, [cancelSpeech, stop])
+
+  const randomizeProspect = useCallback(() => {
+    setScenario((prev) => ({ ...prev, ...randomProspect(prev.offerId) }))
+  }, [])
+
+  const startCall = () => {
+    resetCall()
+    setScorecard(null)
+    setScorecardError(null)
+    setCallError(apiKey ? null : 'Add your Gemini API key in the header to start the call.')
+    setCallActive(true)
+    setTab('room')
+  }
+
+  const openTab = (next) => {
+    if (next === 'room' && !callActive) startCall()
+    else setTab(next)
+  }
+
+  const generateScorecard = useCallback(async (call) => {
+    if (!call) return
+    setScorecardLoading(true)
+    setScorecardError(null)
+    try {
+      if (call.transcript.length === 0) throw new Error('There is nothing to grade — the call had no dialogue.')
+      const raw = await callGemini({
+        apiKey: apiKeyRef.current,
+        systemPrompt: 'You are a precise sales-call grader. You always respond with valid JSON only.',
+        contents: [{ role: 'user', parts: [{ text: buildScorecardPrompt(call.scenario, call.transcript) }] }],
+        temperature: 0.3,
+      })
+      setScorecard(parseJsonResponse(raw))
+    } catch (err) {
+      setScorecardError(err.message)
+    } finally {
+      setScorecardLoading(false)
     }
+  }, [])
+
+  const endCall = () => {
+    const call = { transcript: transcriptRef.current, scenario: scenarioRef.current }
+    resetCall()
+    setCallActive(false)
+    setGradedCall(call)
+    randomizeProspect()
+    setTab('scorecard')
+    generateScorecard(call)
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans p-4 md:p-8 flex flex-col gap-6">
-      {/* HEADER & OFFERS */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#d4af37] tracking-wider uppercase">Astraura Neural Sales Engine</h1>
-          <p className="text-xs text-gray-400">High-Ticket Simulator & Reverse Roleplay Studio</p>
-        </div>
-
-        {/* ROLE SWITCHER TOGGLE */}
-        <div className="flex bg-gray-900 p-1 rounded-lg border border-gray-800">
-          <button
-            onClick={() => handleRoleToggle('rep')}
-            className={`px-4 py-2 text-xs font-semibold rounded-md transition-all ${
-              userRole === 'rep'
-                ? 'bg-[#d4af37] text-black shadow-lg'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            You Pitch (Rep Mode)
-          </button>
-          <button
-            onClick={() => handleRoleToggle('prospect')}
-            className={`px-4 py-2 text-xs font-semibold rounded-md transition-all ${
-              userRole === 'prospect'
-                ? 'bg-[#d4af37] text-black shadow-lg'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            AI Pitches (Master Rep)
-          </button>
-        </div>
-      </header>
-
-      {/* OFFER TABS */}
-      <div className="flex flex-wrap gap-2">
-        {OFFERS.map((offer) => (
-          <button
-            key={offer.id}
-            onClick={() => handleOfferChange(offer.id)}
-            className={`px-3 py-1.5 text-xs font-medium rounded border transition-all ${
-              scenario.offerId === offer.id
-                ? 'border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10'
-                : 'border-gray-800 text-gray-400 hover:border-gray-700'
-            }`}
-          >
-            {offer.tab}
-          </button>
-        ))}
-      </div>
-
-      {/* MAIN CONSOLE GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
-        {/* SCENARIO DETAILS */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-5 flex flex-col gap-4">
-          <h2 className="text-sm font-semibold uppercase text-gray-400 tracking-wider">Target Profile</h2>
-          <div className="space-y-2 text-sm">
-            <div><span className="text-gray-500">Name:</span> {scenario.prospectName}</div>
-            <div><span className="text-gray-500">Role:</span> {scenario.prospectRole}</div>
-            <div><span className="text-gray-500">Company:</span> {scenario.prospectCompany}</div>
-            <div><span className="text-gray-500">Difficulty:</span> <span className="text-[#d4af37]">{scenario.difficulty}</span></div>
-            <div><span className="text-gray-500">Primary Friction:</span> {scenario.primaryPain}</div>
-            <div><span className="text-gray-500">Hidden Objection:</span> {scenario.hiddenObjection}</div>
-          </div>
-
-          {!isCallActive ? (
-            <button
-              onClick={handleStartCall}
-              className="mt-auto w-full py-3 bg-[#d4af37] text-black font-bold uppercase text-xs tracking-wider rounded hover:bg-[#c5a028] transition-all"
-            >
-              Start Call ({userRole === 'rep' ? 'Sales Rep' : 'Prospect'})
-            </button>
-          ) : (
-            <button
-              onClick={handleEndCall}
-              className="mt-auto w-full py-3 bg-red-600/20 text-red-400 border border-red-500/30 font-bold uppercase text-xs tracking-wider rounded hover:bg-red-600/30 transition-all"
-            >
-              End Call & Evaluate
-            </button>
-          )}
-        </div>
-
-        {/* TRANSCRIPT & LIVE CALL */}
-        <div className="lg:col-span-2 bg-gray-900/50 border border-gray-800 rounded-lg p-5 flex flex-col h-[500px]">
-          <div ref={chatContainerRef} className="flex-1 overflow-y-auto space-y-4 pr-2">
-            {transcript.map((msg, i) => (
-              <div
-                key={i}
-                className={`p-3 rounded-lg text-sm max-w-[85%] ${
-                  msg.role === 'rep'
-                    ? 'ml-auto bg-[#d4af37]/10 border border-[#d4af37]/30 text-gray-200'
-                    : 'mr-auto bg-gray-800 border border-gray-700 text-gray-300'
-                }`}
-              >
-                <div className="text-[10px] uppercase font-bold text-gray-500 mb-1">
-                  {msg.role === 'rep' ? 'Sales Rep' : scenario.prospectName}
-                </div>
-                <div>{msg.text}</div>
-              </div>
-            ))}
-            {isAiThinking && <div className="text-xs italic text-gray-500">AI speaking...</div>}
-          </div>
-
-          {/* INPUT CONTROLS */}
-          {isCallActive && (
-            <div className="mt-4 flex gap-2">
-              <input
-                type="text"
-                placeholder={userRole === 'rep' ? "Speak or type your pitch..." : "Speak or type prospect objection..."}
-                value={liveInput}
-                onChange={(e) => resetTranscript(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendUserMessage(liveInput)}
-                className="flex-1 bg-black border border-gray-800 rounded px-4 py-2 text-sm focus:outline-none focus:border-[#d4af37]"
-              />
-              <button
-                onClick={() => (listening ? stopListening() : startListening())}
-                className={`px-4 py-2 rounded text-xs font-bold ${
-                  listening ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-800 text-gray-300'
-                }`}
-              >
-                {listening ? 'Mic On' : 'Mic Off'}
-              </button>
-              <button
-                onClick={() => handleSendUserMessage(liveInput)}
-                className="px-5 py-2 bg-[#d4af37] text-black text-xs font-bold rounded"
-              >
-                Send
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* EVALUATION SCORECARD DISPLAY */}
-      {isEvaluating && <div className="text-center py-6 text-sm text-[#d4af37]">Evaluating execution matrix...</div>}
-      {scorecard && (
-        <div className="bg-gray-900/80 border border-gray-800 rounded-lg p-6 space-y-4">
-          <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-            <h3 className="text-lg font-bold text-[#d4af37]">Performance Scorecard</h3>
-            <div className="text-2xl font-bold">{scorecard.overallScore}/100</div>
-          </div>
-          <p className="text-sm italic text-gray-300">{scorecard.verdict}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Strengths</h4>
-              <ul className="list-disc pl-4 text-xs text-gray-300 space-y-1">
-                {scorecard.strengths?.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Key Improvements</h4>
-              <ul className="list-disc pl-4 text-xs text-gray-300 space-y-1">
-                {scorecard.improvements?.map((imp, i) => <li key={i}>{imp}</li>)}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="min-h-full bg-ink">
+      <Header apiKey={apiKey} onApiKeyChange={setApiKey} />
+      <Tabs active={tab} onChange={openTab} />
+      <main className="mx-auto max-w-7xl px-6 py-6">
+        {tab === 'setup' && (
+          <SetupTab
+            scenario={scenario}
+            onChange={setScenario}
+            onReset={() => setScenario(DEFAULT_SCENARIO)}
+            onRandomize={randomizeProspect}
+            onStartCall={startCall}
+            voices={voices}
+          />
+        )}
+        {tab === 'room' && (
+          <ZoomRoom
+            scenario={scenario}
+            transcript={transcript}
+            interim={interim}
+            listening={listening}
+            thinking={thinking}
+            speaking={speaking}
+            error={callError}
+            micOn={micOn}
+            micSupported={micSupported}
+            onToggleMic={() => setMicOn((v) => !v)}
+            onSendText={sendToProspect}
+            onStopSpeaking={cancelSpeech}
+            onEndCall={endCall}
+          />
+        )}
+        {tab === 'scorecard' && (
+          <Scorecard
+            scorecard={scorecard}
+            loading={scorecardLoading}
+            error={scorecardError}
+            transcript={gradedCall?.transcript ?? []}
+            onRegenerate={() => generateScorecard(gradedCall)}
+            onNewCall={() => setTab('setup')}
+          />
+        )}
+      </main>
     </div>
   )
 }
