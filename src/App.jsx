@@ -95,6 +95,7 @@ export default function App() {
             voiceURI: scenarioRef.current.voiceURI,
             rate: Number(scenarioRef.current.voiceRate) || 1,
             pitch: Number(scenarioRef.current.voicePitch) || 1,
+            gender: scenarioRef.current.prospectGender,
           })
         }
       } catch (err) {

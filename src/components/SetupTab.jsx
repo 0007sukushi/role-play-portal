@@ -4,6 +4,7 @@ import {
   CORE_PRINCIPLES,
   DIFFICULTIES,
   DISCOVERY_PROTOCOL,
+  EXPERT_CLOSERS,
   GENDERS,
   MOODS,
   OFFERS,
@@ -23,9 +24,20 @@ function Field({ label, children }) {
 export default function SetupTab({ scenario, onChange, onReset, onRandomize, onStartCall, voices }) {
   const set = (key) => (e) => onChange({ ...scenario, [key]: e.target.value })
 
+  // Filter strictly for English voices to prevent German/Arabic/other language bugs
+  const englishVoices = voices.filter((v) => !v.lang || v.lang.toLowerCase().startsWith('en'))
+  const sortedVoices = [...englishVoices].sort((a, b) => {
+    const aIsGood = a.name.includes('Microsoft') || a.name.includes('Natural') || a.name.includes('Google') ? 1 : 0
+    const bIsGood = b.name.includes('Microsoft') || b.name.includes('Natural') || b.name.includes('Google') ? 1 : 0
+    return bIsGood - aIsGood
+  })
+
+  const personaEnabled = Boolean(scenario.enableCloserPersona)
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       <section className="space-y-6">
+        {/* Choose an offer */}
         <div className="card space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Choose an offer</h2>
           <div className="flex flex-wrap gap-2">
@@ -55,10 +67,58 @@ export default function SetupTab({ scenario, onChange, onReset, onRandomize, onS
           </p>
         </div>
 
+        {/* Expert Closer Persona Toggle & Picker */}
+        <div className="card space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Expert Closer Persona Mode</h2>
+              <p className="text-xs text-white/45 mt-0.5">Toggle on to train against elite closer archetypes.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange({ ...scenario, enableCloserPersona: !personaEnabled })}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                personaEnabled ? 'bg-gold' : 'bg-edge'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-ink shadow ring-0 transition duration-200 ease-in-out ${
+                  personaEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {personaEnabled && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-edge">
+              {EXPERT_CLOSERS.map((closer) => {
+                const isActive = closer.id === scenario.closerPersonaId
+                return (
+                  <button
+                    key={closer.id}
+                    type="button"
+                    onClick={() => onChange({ ...scenario, closerPersonaId: closer.id })}
+                    className={`text-left rounded-lg border p-3 transition ${
+                      isActive
+                        ? 'border-gold/70 bg-gold/10 text-white'
+                        : 'border-edge bg-ink text-white/60 hover:border-white/25 hover:text-white'
+                    }`}
+                  >
+                    <div className="text-xs font-bold text-gold mb-1">{closer.name}</div>
+                    <div className="text-[11px] text-white/80 font-medium mb-1">{closer.title}</div>
+                    <div className="text-[10px] text-white/45 line-clamp-2">{closer.description}</div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Offer Details */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold">
-              <Sparkles className="h-4 w-4" /> Offer
+              <Sparkles className="h-4 w-4" /> Offer Details
             </h2>
             <button type="button" onClick={onReset} className="btn-ghost !px-3 !py-1.5 text-xs">
               <RotateCcw className="h-3.5 w-3.5" /> Reset
@@ -78,6 +138,7 @@ export default function SetupTab({ scenario, onChange, onReset, onRandomize, onS
           </Field>
         </div>
 
+        {/* AI Prospect */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">AI Prospect</h2>
@@ -146,18 +207,19 @@ export default function SetupTab({ scenario, onChange, onReset, onRandomize, onS
           </div>
         </div>
 
+        {/* Prospect Voice (English Only) */}
         <div className="card space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Prospect Voice</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Prospect Voice (English Only)</h2>
           <Field label="Voice">
             <select
               className="field"
               value={scenario.voiceURI ?? ''}
               onChange={(e) => onChange({ ...scenario, voiceURI: e.target.value })}
             >
-              <option value="">System default</option>
-              {voices.map((v) => (
+              <option value="">System Default English Voice</option>
+              {sortedVoices.map((v) => (
                 <option key={v.voiceURI} value={v.voiceURI}>
-                  {v.name} ({v.lang})
+                  {v.name} ({v.lang}) {v.name.includes('Microsoft') || v.name.includes('Natural') ? '✨ [Natural]' : ''}
                 </option>
               ))}
             </select>
@@ -193,6 +255,7 @@ export default function SetupTab({ scenario, onChange, onReset, onRandomize, onS
         </button>
       </section>
 
+      {/* Right Sidebar */}
       <aside className="space-y-6">
         <div className="card space-y-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold">

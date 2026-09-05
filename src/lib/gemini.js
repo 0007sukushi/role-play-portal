@@ -1,4 +1,5 @@
-export const PRIMARY_MODEL = 'gemini-3.6-flash'
+// src/lib/gemini.js
+export const PRIMARY_MODEL = 'gemini-3.5-flash-lite'
 export const FALLBACK_MODEL = 'gemini-2.5-flash'
 
 const MAX_ATTEMPTS = 3

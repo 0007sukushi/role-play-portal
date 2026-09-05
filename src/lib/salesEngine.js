@@ -1,3 +1,4 @@
+// src/lib/salesEngine.js
 export const OFFERS = [
   {
     id: 'founding-circle',
@@ -52,6 +53,37 @@ export const OFFERS = [
   },
 ]
 
+export const EXPERT_CLOSERS = [
+  {
+    id: 'hormozi',
+    name: 'Alex Hormozi Style',
+    title: 'Value & Leverage Closer',
+    description: 'Ruthlessly logical, obsessed with ROI, risk reversal, and asymmetric upside.',
+    promptStyle: 'You are an elite, no-nonsense high-stakes closer and buyer in the style of Alex Hormozi. You speak with extreme clarity, focus entirely on return on investment, risk reversal, and making or evaluating an offer so good people feel stupid saying no. You evaluate the offer critically and test the seller on value, margins, and leverage. You respond entirely in English.',
+  },
+  {
+    id: 'elliot',
+    name: 'Andy Elliot Style',
+    title: 'High Energy & Alpha Directness',
+    description: 'Unapologetic, alpha directness, zero tolerance for hesitation or weak framing.',
+    promptStyle: 'You are an elite, high-energy sales closer and prospect in the style of Andy Elliot. You demand total conviction, absolute alpha posture, and zero hesitation. You challenge weak framing instantly and test whether the seller has the spine to lead. You respond entirely in English.',
+  },
+  {
+    id: 'cardone',
+    name: 'Grant Cardone Style',
+    title: '10X Scale & Urgency',
+    description: 'Massive action, relentless framing, pushing past all superficial resistance.',
+    promptStyle: 'You are an ultra-aggressive high-ticket closer and buyer in the style of Grant Cardone. You push for 10X thinking, massive action, and immediate commitment. You dismiss small thinking and force the seller to justify why this isn’t scaling fast enough. You respond entirely in English.',
+  },
+  {
+    id: 'sapp',
+    name: 'Shelby Sapp Style',
+    title: 'Precision Interrogation',
+    description: 'Calm, surgical interrogation, exposing hidden fears and structural gaps instantly.',
+    promptStyle: 'You are a master precision closer and buyer in the style of Shelby Sapp. You use calm, surgical questioning to expose hidden objections, emotional friction points, and logical gaps instantly. You maintain absolute composure while dissecting the pitch. You respond entirely in English.',
+  },
+]
+
 export const DEFAULT_SCENARIO = {
   offerId: OFFERS[0].id,
   offerName: OFFERS[0].offerName,
@@ -59,6 +91,8 @@ export const DEFAULT_SCENARIO = {
   terms: OFFERS[0].terms,
   callGoal: OFFERS[0].callGoal,
   mode: OFFERS[0].mode,
+  enableCloserPersona: false,
+  closerPersonaId: EXPERT_CLOSERS[0].id,
   prospectName: 'Jordan Mercer',
   prospectRole: 'Startup Founder',
   prospectGender: 'Non-binary',
@@ -71,6 +105,7 @@ export const DEFAULT_SCENARIO = {
   budget: '£5,000 - £25,000',
   prospectFocus:
     'The 2pm cognitive wall, brain fog, and erratic daily output. They judge everything by whether it protects the back half of their day.',
+  voiceURI: '',
   voiceRate: 1,
   voicePitch: 1,
 }
@@ -90,7 +125,6 @@ export function applyOffer(scenario, offerId) {
 }
 
 export const DIFFICULTIES = ['Easy', 'Moderate', 'Hard', 'Brutal']
-
 export const MOODS = [
   'Warm and open',
   'Skeptical but curious',
@@ -99,7 +133,6 @@ export const MOODS = [
   'Guarded and analytical',
   'Burned by a past vendor',
 ]
-
 export const GENDERS = ['Female', 'Male', 'Non-binary']
 
 const FIRST_NAMES = {
@@ -107,7 +140,6 @@ const FIRST_NAMES = {
   Male: ['Marcus', 'Dmitri', 'Idris', 'Tobias', 'Rajesh', 'Callum', 'Andre', 'Hiro', 'Sebastian', 'Omar'],
   'Non-binary': ['Jordan', 'Alex', 'Riley', 'Sasha', 'Rowan', 'Kai', 'Ellis', 'Devon'],
 }
-
 const LAST_NAMES = [
   'Mercer',
   'Okonkwo',
@@ -129,7 +161,6 @@ const OPERATOR_PAINS = [
   'Sleeps badly, wakes wired-and-tired, and never feels sharp two days running.',
   'Cannot hold deep focus long enough to do the strategic work only they can do.',
 ]
-
 const OPERATOR_OBJECTIONS = [
   'Thinks the investment is too high and wants to "think about it".',
   'Has tried nootropics and supplements before and believes none of them worked.',
@@ -137,7 +168,6 @@ const OPERATOR_OBJECTIONS = [
   'Believes the timing is wrong and wants to revisit next quarter.',
   'Says they are too busy to add anything else to their routine.',
 ]
-
 const INVESTOR_OBJECTIONS = [
   'Thinks the valuation is rich for the stage and wants a lower entry.',
   'Has been burned by a consumer goods brand that could not hold its margins.',
@@ -146,7 +176,6 @@ const INVESTOR_OBJECTIONS = [
   'Wants to run it past their investment committee or family office principal.',
   'Says supplements are a crowded category with no defensible moat.',
 ]
-
 const COFOUNDER_OBJECTIONS = [
   'Thinks 20% with a 1-year cliff is thin for the risk they are taking.',
   'Wants to know why the founder cannot hire this role instead of giving equity.',
@@ -154,7 +183,6 @@ const COFOUNDER_OBJECTIONS = [
   'Needs to know there is runway before leaving a well-paid role.',
   'Wants a clear split of decision rights before saying yes.',
 ]
-
 const COLD_OBJECTIONS = [
   'Assumes this is a cold sales call and wants it over in thirty seconds.',
   'Says "just email me" to get off the phone.',
@@ -199,7 +227,7 @@ const ARCHETYPES = {
   },
   'co-founder': {
     focus:
-      'Vision alignment, the equity cliff terms, the founder\u2019s execution track record, and where their own operating strengths actually plug in.',
+      'Vision alignment, the equity cliff terms, the founder’s execution track record, and where their own operating strengths actually plug in.',
     roles: [
       { title: 'Sales & Growth Lead', company: 'Meridian Commerce', industry: 'DTC growth', budget: 'Currently on £140k base + bonus' },
       { title: 'Scaled Business Operator', company: 'Ashgrove Group', industry: 'Consumer operations', budget: 'Currently on £180k package' },
@@ -208,7 +236,7 @@ const ARCHETYPES = {
       { title: 'Head of Supply Chain', company: 'Baptiste Logistics', industry: 'Manufacturing & fulfilment', budget: 'Currently on £130k package' },
     ],
     pains: [
-      'Is building someone else\u2019s company and has no real ownership of the upside.',
+      'Is building someone else’s company and has no real ownership of the upside.',
       'Has hit the ceiling of their current role and wants to run something.',
       'Wants a category-defining mission instead of another incremental growth job.',
       'Left the last venture because the founder could not make decisions.',
@@ -240,7 +268,6 @@ const ARCHETYPE_BY_OFFER = {
 }
 
 const COLD_MOODS = ['Busy and impatient', 'Direct and blunt', 'Guarded and analytical']
-
 const pick = (list) => list[Math.floor(Math.random() * list.length)]
 
 export function randomProspect(offerId) {
@@ -271,7 +298,7 @@ export const DISCOVERY_PROTOCOL = [
   {
     step: 2,
     title: 'Repeat their exact words',
-    detail: 'Mirror the prospect\u2019s own language back to them so they hear their problem clearly (Chris Voss mirroring).',
+    detail: 'Mirror the prospect’s own language back to them so they hear their problem clearly (Chris Voss mirroring).',
   },
   {
     step: 3,
@@ -280,7 +307,7 @@ export const DISCOVERY_PROTOCOL = [
   },
   {
     step: 4,
-    title: 'Solution \u2192 Feature \u2192 Outcome',
+    title: 'Solution → Feature → Outcome',
     detail: 'Present the solution, tie it to a specific feature, and land on the outcome in revenue and neural wealth (freedom, clarity, peace of mind).',
   },
 ]
@@ -299,14 +326,14 @@ export const CORE_PRINCIPLES = [
   'Selling is clarification, not convincing.',
   'People move to escape pain far faster than to chase pleasure.',
   'Frame questions for "No" to preserve prospect autonomy — "Would you be against moving forward?"',
-  'Use embedded commands — "I don\u2019t want you to decide too quickly before you know everything about Astraura."',
+  'Use embedded commands — "I don’t want you to decide too quickly before you know everything about Astraura."',
   'Always say "investment", never "price" or "cost".',
 ]
 
 export const SOURCE_BOOKS = [
   {
     title: 'Never Split the Difference — Chris Voss',
-    detail: 'Tactical empathy, mirroring, labeling ("It sounds like\u2026"), calibrated "How / What" questions, the "That\u2019s right" moment, and no-oriented questions.',
+    detail: 'Tactical empathy, mirroring, labeling ("It sounds like…"), calibrated "How / What" questions, the "That’s right" moment, and no-oriented questions.',
   },
   {
     title: 'Straight Line Persuasion — Jeb Blount / Alex Hormozi',
@@ -343,9 +370,17 @@ This is a COLD CALL. You have never heard of the rep or of Astraura and you did 
 
 export function buildProspectSystemPrompt(scenario) {
   const s = { ...DEFAULT_SCENARIO, ...scenario }
-  return `You are role-playing as a SALES PROSPECT on a live ${s.mode === 'cold' ? 'cold call' : 'Zoom sales call'}. You are NOT an assistant and you never break character.
+  const closer = EXPERT_CLOSERS.find((c) => c.id === s.closerPersonaId) || EXPERT_CLOSERS[0]
 
-${s.mode === 'cold' ? coldAwareness : warmAwareness}
+  const personaInstructions = s.enableCloserPersona
+    ? `${closer.promptStyle}
+- Style / Persona: ${closer.name} (${closer.title}) — ${closer.description}`
+    : ''
+
+  return `You are role-playing as a SALES PROSPECT on a live ${s.mode === 'cold' ? 'cold call' : 'Zoom sales call'}. You are NOT an assistant and you never break character. 
+CRITICAL RULE: You must respond STRICTLY and ENTIRELY in English. Never use German, Arabic, or any other foreign language regardless of browser settings.
+
+${personaInstructions}
 
 # YOUR CHARACTER
 - Name: ${s.prospectName}
@@ -359,6 +394,8 @@ ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 - Your hidden objection (surface it only when the rep gets close to a close): ${s.hiddenObjection}
 - Your budget reality: ${s.budget}
 
+${s.mode === 'cold' ? coldAwareness : warmAwareness}
+
 # THE OFFER BEING SOLD TO YOU
 - Offer: ${s.offerName}
 - What it is: ${s.offerDescription}
@@ -366,31 +403,13 @@ ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 - The rep's goal on this call: ${s.callGoal}
 
 # HOW TO BEHAVE
-- Speak like a real human on a video call: 1\u20133 short sentences, conversational, sometimes hesitant. Never bullet points, never markdown, never stage directions.
+- Speak like a real human on a video call: 1–3 short sentences, conversational, sometimes hesitant. Never bullet points, never markdown, never stage directions.
 - Reward good selling and punish bad selling. If the rep pitches before discovering your pain, get resistant. If the rep asks sharp, calibrated questions, open up.
 - Raise objections naturally ("that's a lot of money", "I need to think about it", "I've tried something like this before", "let me talk to my partner").
-- If the rep handles an objection using Acknowledge \u2192 Ask for context \u2192 Answer the limiting belief \u2192 Reframe the investment against the 6-month cost of inaction, your certainty should visibly increase and you should say so in your own words.
-- If the rep says "price" or "cost" about the offer instead of "investment", you may become slightly more price-focused.
+- If the rep handles an objection using Acknowledge → Ask for context → Answer the limiting belief → Reframe the investment against the 6-month cost of inaction, your certainty should visibly increase and you should say so in your own words.
 - You are allowed to agree and buy when the rep has genuinely earned it. Say so plainly ("okay, let's do it").
 - Never coach the rep, never evaluate them, never mention frameworks. You are the prospect.
-
-# THE SELLING SYSTEM THE REP IS BEING TRAINED ON (use this to judge their performance in character)
-## 4-Step Discovery Protocol
-1. Ask the biggest problem.
-2. Repeat the prospect's exact words back.
-3. Highlight the 6-month consequence of inaction.
-4. Solution \u2192 Feature \u2192 Outcome (revenue and neural wealth).
-
-## AAAR Objection Framework
-${AAAR_FRAMEWORK.map((a) => `- ${a.step}: ${a.detail}`).join('\n')}
-
-## Core Principles
-${CORE_PRINCIPLES.map((p) => `- ${p}`).join('\n')}
-
-## Embedded source material
-${SOURCE_BOOKS.map((b) => `- ${b.title}: ${b.detail}`).join('\n')}
-
-Respond ONLY with what ${s.prospectName} says out loud.`
+- Respond ONLY with what ${s.prospectName} says out loud in English.`
 }
 
 export function buildScorecardPrompt(scenario, transcript) {
@@ -398,9 +417,7 @@ export function buildScorecardPrompt(scenario, transcript) {
   const convo = transcript
     .map((t) => `${t.role === 'rep' ? 'REP' : s.prospectName.toUpperCase()}: ${t.text}`)
     .join('\n')
-
   return `You are an elite sales coach reviewing a recorded role-play call. The rep was selling ${s.offerName} to ${s.prospectName}, ${s.prospectRole} at ${s.prospectCompany}.
-
 Call type: ${
     s.mode === 'cold'
       ? 'COLD CALL to an unaware prospect. Success is breaking the pattern, earning permission, surfacing friction, and booking a follow-up — not closing money on this call.'
@@ -408,18 +425,14 @@ Call type: ${
   }
 The rep's goal: ${s.callGoal}
 Terms on the table: ${s.terms}
-
 Each category is graded out of 100 on execution precision, and "overallScore" is the weighted average of those categories (0-100).
-
 Score the rep against this system:
-- 4-Step Discovery Protocol: (1) asked biggest problem, (2) repeated exact words, (3) highlighted the 6-month consequence of inaction, (4) Solution \u2192 Feature \u2192 Outcome framed as revenue and neural wealth.
+- 4-Step Discovery Protocol: (1) asked biggest problem, (2) repeated exact words, (3) highlighted the 6-month consequence of inaction, (4) Solution → Feature → Outcome framed as revenue and neural wealth.
 - AAAR Objection Framework: Acknowledge, Ask for context, Answer the limiting belief, Reframe investment vs. 6-month cost of inaction.
 - Core principles: selling is clarification not convincing; escape pain over pleasure; no-oriented questions that preserve autonomy; embedded commands; always "investment" never "price/cost".
 - Book principles: Never Split the Difference (tactical empathy, mirroring, labeling, calibrated questions), Straight Line Persuasion (certainty in product/operator/company, looping), SPIN Selling (Situation, Problem, Implication, Need-payoff).
-
 TRANSCRIPT:
 ${convo || '(no conversation took place)'}
-
 Return ONLY valid JSON, no markdown fences, matching exactly this shape:
 {
   "overallScore": 0-100,
@@ -437,7 +450,7 @@ Return ONLY valid JSON, no markdown fences, matching exactly this shape:
     { "step": "Asked biggest problem", "hit": true },
     { "step": "Repeated exact words", "hit": false },
     { "step": "Highlighted 6-month consequence", "hit": false },
-    { "step": "Solution \u2192 Feature \u2192 Outcome", "hit": false }
+    { "step": "Solution → Feature → Outcome", "hit": false }
   ],
   "strengths": ["..."],
   "improvements": ["..."],
