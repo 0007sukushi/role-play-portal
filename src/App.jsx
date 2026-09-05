@@ -6,6 +6,7 @@ import ZoomRoom from './components/ZoomRoom'
 import Scorecard from './components/Scorecard'
 import {
   DEFAULT_SCENARIO,
+  EXPERT_CLOSERS,
   buildProspectSystemPrompt,
   buildScorecardPrompt,
   randomProspect,
@@ -91,11 +92,14 @@ export default function App() {
         transcriptRef.current = withReply
         setTranscript(withReply)
         if (ttsSupported) {
+          const activeCloser = scenarioRef.current.enableCloserPersona
+            ? EXPERT_CLOSERS.find((c) => c.id === scenarioRef.current.closerPersonaId)
+            : null
           speak(reply, {
             voiceURI: scenarioRef.current.voiceURI,
             rate: Number(scenarioRef.current.voiceRate) || 1,
             pitch: Number(scenarioRef.current.voicePitch) || 1,
-            gender: scenarioRef.current.prospectGender,
+            gender: activeCloser ? activeCloser.gender : scenarioRef.current.prospectGender,
           })
         }
       } catch (err) {
