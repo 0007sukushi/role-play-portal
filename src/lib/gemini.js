@@ -1,6 +1,6 @@
 // src/lib/gemini.js
-export const PRIMARY_MODEL = 'gemini-3.5-flash-lite'
-export const FALLBACK_MODEL = 'gemini-2.5-flash'
+export const PRIMARY_MODEL = 'gemini-2.5-flash'
+export const FALLBACK_MODEL = 'gemini-1.5-flash'
 
 const MAX_ATTEMPTS = 3
 const BASE_DELAY_MS = 800
@@ -67,6 +67,10 @@ export async function callGemini({ apiKey, systemPrompt, contents, temperature =
   }
 
   throw lastError
+}
+
+export async function sendChatMessage({ apiKey, systemPrompt, contents, temperature = 0.9, onNotice }) {
+  return callGemini({ apiKey, systemPrompt, contents, temperature, onNotice })
 }
 
 export function transcriptToContents(transcript) {
