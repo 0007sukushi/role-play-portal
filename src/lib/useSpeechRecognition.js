@@ -7,6 +7,12 @@ function getRecognitionCtor() {
 
 export const speechRecognitionSupported = () => Boolean(getRecognitionCtor())
 
+// How long to wait after the user stops producing any speech (final or
+// interim) before we treat their turn as actually finished and send it.
+// Raise this if you're still getting cut off mid-thought; lower it if
+// replies feel too slow to fire after you finish talking.
+const SILENCE_COMMIT_MS = 2200
+
 export function useSpeechRecognition({ onFinalResult }) {
   const [listening, setListening] = useState(false)
   const [interim, setInterim] = useState('')
@@ -14,10 +20,33 @@ export function useSpeechRecognition({ onFinalResult }) {
   const recognitionRef = useRef(null)
   const wantsListeningRef = useRef(false)
   const finalHandlerRef = useRef(onFinalResult)
+  const bufferRef = useRef('')
+  const silenceTimerRef = useRef(null)
 
   useEffect(() => {
     finalHandlerRef.current = onFinalResult
   }, [onFinalResult])
+
+  const clearSilenceTimer = () => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+  }
+
+  const commitBuffer = useCallback(() => {
+    clearSilenceTimer()
+    const text = bufferRef.current.trim()
+    bufferRef.current = ''
+    if (text) finalHandlerRef.current?.(text)
+  }, [])
+
+  const scheduleCommit = useCallback(() => {
+    clearSilenceTimer()
+    silenceTimerRef.current = setTimeout(() => {
+      commitBuffer()
+    }, SILENCE_COMMIT_MS)
+  }, [commitBuffer])
 
   useEffect(() => {
     const Ctor = getRecognitionCtor()
@@ -30,17 +59,30 @@ export function useSpeechRecognition({ onFinalResult }) {
 
     recognition.onresult = (event) => {
       let pending = ''
+      let gotFinalChunk = false
+
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i]
         const text = result[0].transcript
         if (result.isFinal) {
           const trimmed = text.trim()
-          if (trimmed) finalHandlerRef.current?.(trimmed)
+          if (trimmed) {
+            bufferRef.current = bufferRef.current ? `${bufferRef.current} ${trimmed}` : trimmed
+            gotFinalChunk = true
+          }
         } else {
           pending += text
         }
       }
-      setInterim(pending)
+
+      setInterim(bufferRef.current + (pending ? ` ${pending}` : ''))
+
+      // Any speech activity (final chunk or live interim text) means the
+      // person is still mid-thought — push the "are they done?" timer out
+      // instead of committing right away.
+      if (gotFinalChunk || pending.trim()) {
+        scheduleCommit()
+      }
     }
 
     recognition.onerror = (event) => {
@@ -51,7 +93,10 @@ export function useSpeechRecognition({ onFinalResult }) {
     }
 
     recognition.onend = () => {
-      setInterim('')
+      // The engine stopped on its own (it does this periodically even
+      // mid-conversation). If the user is still holding mic-on, restart
+      // it seamlessly without treating this as the end of their turn —
+      // only the silence timer decides that.
       if (wantsListeningRef.current) {
         try {
           recognition.start()
@@ -59,6 +104,8 @@ export function useSpeechRecognition({ onFinalResult }) {
           setListening(false)
         }
       } else {
+        commitBuffer()
+        setInterim('')
         setListening(false)
       }
     }
@@ -68,8 +115,9 @@ export function useSpeechRecognition({ onFinalResult }) {
       wantsListeningRef.current = false
       recognition.onend = null
       recognition.stop()
+      clearSilenceTimer()
     }
-  }, [])
+  }, [commitBuffer, scheduleCommit])
 
   const start = useCallback(() => {
     const recognition = recognitionRef.current
@@ -78,6 +126,7 @@ export function useSpeechRecognition({ onFinalResult }) {
       return
     }
     setError(null)
+    bufferRef.current = ''
     wantsListeningRef.current = true
     try {
       recognition.start()
@@ -89,10 +138,18 @@ export function useSpeechRecognition({ onFinalResult }) {
 
   const stop = useCallback(() => {
     wantsListeningRef.current = false
+    clearSilenceTimer()
     recognitionRef.current?.stop()
     setListening(false)
     setInterim('')
+    bufferRef.current = ''
   }, [])
 
-  return { listening, interim, error, start, stop, supported: speechRecognitionSupported() }
+  // Optional: call this to manually flag "I'm done talking" right now,
+  // instead of waiting for the silence timer (e.g. wire to an Enter key).
+  const finishTurn = useCallback(() => {
+    commitBuffer()
+  }, [commitBuffer])
+
+  return { listening, interim, error, start, stop, finishTurn, supported: speechRecognitionSupported() }
 }
