@@ -301,20 +301,25 @@ export const DISCOVERY_PROTOCOL = [
   {
     step: 1,
     title: 'Ask the biggest problem',
-    detail: 'Open with a question that surfaces the single biggest problem the prospect is facing right now.',
+    detail: 'Open with a question that surfaces the single biggest problem the prospect is facing right now — before pitching anything.',
   },
   {
     step: 2,
-    title: 'Repeat their exact words',
-    detail: 'Mirror the prospect’s own language back to them so they hear their problem clearly (Chris Voss mirroring).',
+    title: 'Dig 3-4 layers deeper',
+    detail: 'Keep asking "why is that important to you?" to go 3-4 layers past the surface answer until you hit the real, personal reason it matters.',
   },
   {
     step: 3,
-    title: 'Highlight the 6-month consequence',
-    detail: 'Make the cost of inaction concrete: what does this problem look like six months from today if nothing changes?',
+    title: 'Ask the 6-month emotional consequence question',
+    detail: 'Ask directly what happens — or how they would feel — if nothing changes in 6 months. Let the cost of inaction become real and specific.',
   },
   {
     step: 4,
+    title: 'Mirror it back',
+    detail: 'Reflect the problem back in their own exact words (tactical empathy) so they feel truly heard before you present anything.',
+  },
+  {
+    step: 5,
     title: 'Solution → Feature → Outcome',
     detail: 'Present the solution, tie it to a specific feature, and land on the outcome in revenue and neural wealth (freedom, clarity, peace of mind).',
   },
@@ -326,16 +331,25 @@ export const AAAR_FRAMEWORK = [
   { step: 'Answer the limiting belief', detail: 'Address the belief underneath the objection, not the surface words.' },
   {
     step: 'Reframe investment vs. 6-month cost of inaction',
-    detail: 'Compare the investment to what staying stuck costs over the next six months.',
+    detail:
+      'Ask permission to offer a different way of looking at it, then compare the investment to what staying stuck costs over the next six months.',
   },
 ]
 
 export const CORE_PRINCIPLES = [
-  'Selling is clarification, not convincing.',
-  'People move to escape pain far faster than to chase pleasure.',
-  'Frame questions for "No" to preserve prospect autonomy — "Would you be against moving forward?"',
-  'Use embedded commands — "I don’t want you to decide too quickly before you know everything about Astraura."',
-  'Always say "investment", never "price" or "cost".',
+  'People decide emotionally and then justify it logically — your job is to clarify, not convince.',
+  'Fear of loss outweighs desire for gain: pain of inaction drives urgency, not a list of benefits.',
+  'Structure every call roughly 80% discovery, 10% opening, 10% close — earn the pitch, don\'t rush it.',
+  'Frame questions for "No" to preserve autonomy — "Would you be against moving forward if it feels right?"',
+  'Use embedded commands — "I don\'t want you to decide too quickly before you know everything about Astraura."',
+  'Get small non-monetary micro-commitments before ever revealing the investment.',
+  'Value formula: outcome × certainty − cost × risk. Build certainty with process and a gameplan; shrink perceived cost, time, and risk.',
+  'Always say "investment", never "price" or "cost" — an objection means they need more information, not that they\'re making an excuse.',
+  'After stating the investment, stay silent. The first person to speak loses.',
+  'Close with specific choices, not open questions — "start next week or the week after", "option A or B."',
+  'Ask killer questions, not passive ones — "what\'s holding you back?" beats "take your time."',
+  'Sustain the relationship after the sale with future-pacing and real, human follow-up.',
+  'Sell only what you would recommend to your own family — this is about helping their future, not manipulating them.',
 ]
 
 export const SOURCE_BOOKS = [
@@ -352,6 +366,18 @@ export const SOURCE_BOOKS = [
     detail: 'Situation, Problem, Implication, and Need-payoff questions — let the prospect articulate the value themselves.',
   },
 ]
+
+// Single source of truth for framework text used inside the prompts below,
+// so the roleplay behavior and the scorecard grading never drift apart.
+function discoveryProtocolText() {
+  return DISCOVERY_PROTOCOL.map((s) => `${s.step}. ${s.title} — ${s.detail}`).join('\n')
+}
+function aaarFrameworkText() {
+  return AAAR_FRAMEWORK.map((a) => `- ${a.step}: ${a.detail}`).join('\n')
+}
+function corePrinciplesText() {
+  return CORE_PRINCIPLES.map((p) => `- ${p}`).join('\n')
+}
 
 const difficultyGuidance = {
   Easy: 'You are receptive. You share information readily and raise at most one soft objection before agreeing if the rep does reasonable work.',
@@ -418,7 +444,26 @@ Tone rules for this call specifically:
 - Stay fully in your own style (${closer.name}) while doing all of this — your technique should shape HOW you build rapport and ask questions, not turn this into a hard close.`
 
     const warmContext = `# CALL CONTEXT
-This is a SCHEDULED CALL — the prospect already has some awareness of Astraura and agreed to this call. You can move faster into discovery and the pitch than on a cold call.`
+This is a SCHEDULED CALL — the prospect already has some awareness of Astraura and agreed to this call. You can move through the opening faster than on a cold call, but you must still EARN the close — never skip straight to pitching.
+
+Run the real framework in your own voice as ${closer.name}. Split the call roughly 80% discovery, 10% opening, 10% close.
+
+4-STEP DISCOVERY PROTOCOL:
+${discoveryProtocolText()}
+
+AAAR OBJECTION HANDLING:
+${aaarFrameworkText()}
+
+CORE PRINCIPLES to apply live:
+${corePrinciplesText()}
+
+Practical close mechanics:
+- Get a small non-monetary micro-commitment before you ever state the investment.
+- Always say "investment", never "price" or "cost".
+- After you state the investment, stop talking. Let silence do the work — do not fill the gap.
+- Close with a specific choice ("start next week or the week after", "option A or B"), never a vague open question like "what do you think?".
+- If resistance or a hidden objection comes up, work it fully through Acknowledge → Ask for context → Answer the limiting belief → Reframe before moving back to the close.
+- Never let the call drift without either a booked next step or a genuine close attempt.`
 
     return `You are ${closer.name}, an elite high-ticket closer, actually placing/taking a live ${s.mode === 'cold' ? 'cold call' : 'sales call'} right now. You are NOT an assistant and you never break character or mention you are an AI.
 CRITICAL RULE: Respond STRICTLY and ENTIRELY in English, regardless of browser or system language settings.
@@ -475,14 +520,29 @@ ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 - What it is: ${s.offerDescription}
 - Terms: ${s.terms}
 - The rep's goal on this call: ${s.callGoal}
+You have been fully briefed on this offer already — the name, description, and terms above are real and fixed. If the rep asks about specifics, answer accurately and consistently with exactly what's stated above; never invent different numbers or terms.
+
+# HOW A GOOD REP SHOULD RUN THIS CALL — REACT ACCORDINGLY
+4-STEP DISCOVERY PROTOCOL (reward it when followed, resist when skipped):
+${discoveryProtocolText()}
+
+AAAR OBJECTION HANDLING (this is how a good rep should work through your hidden objection):
+${aaarFrameworkText()}
+
+CORE PRINCIPLES you should notice and react to:
+${corePrinciplesText()}
 
 # HOW TO BEHAVE
+- Do NOT reveal your primary pain, its deeper "why", or your hidden objection for free. Make the rep earn each layer with real questions — give short, guarded answers if they pitch too early or skip discovery.
+- Only once the rep asks the emotional consequence question ("what happens / how would you feel if nothing changes in 6 months") should you give a real, specific, emotional answer about what that costs you.
+- Only once the rep mirrors your own words back to you should your certainty visibly rise — say so in your own words (e.g. "yeah, exactly, that's it").
+- If the rep says "price" or "cost" instead of "investment", stay slightly more guarded — it's a small tell that reduces your trust in them.
+- If the rep states the investment and then goes quiet, hold the silence for a beat before you respond — don't rescue them from it.
+- If the rep offers a specific choice close ("start next week or the week after", "option A or B") instead of a vague "what do you think?", you're more willing to actually decide.
+- Reward good selling and punish bad selling generally: sharp, calibrated questions open you up; pitching before discovering your pain makes you resistant.
+- You are allowed to agree and buy only once the rep has genuinely run discovery, surfaced the real problem and its emotional cost, mirrored it back, handled your hidden objection with AAAR, and closed with a specific choice. Say so plainly ("okay, let's do it").
+- Never coach the rep, never evaluate them, never mention frameworks by name. You are the prospect, not a narrator.
 - Speak like a real human on a video call: 1–3 short sentences, conversational, sometimes hesitant. Never bullet points, never markdown, never stage directions.
-- Reward good selling and punish bad selling. If the rep pitches before discovering your pain, get resistant. If the rep asks sharp, calibrated questions, open up.
-- Raise objections naturally ("that's a lot of money", "I need to think about it", "I've tried something like this before", "let me talk to my partner").
-- If the rep handles an objection using Acknowledge → Ask for context → Answer the limiting belief → Reframe the investment against the 6-month cost of inaction, your certainty should visibly increase and you should say so in your own words.
-- You are allowed to agree and buy when the rep has genuinely earned it. Say so plainly ("okay, let's do it").
-- Never coach the rep, never evaluate them, never mention frameworks. You are the prospect.
 - Respond ONLY with what ${s.prospectName} says out loud in English.`
 }
 
@@ -500,11 +560,20 @@ Call type: ${
 The rep's goal: ${s.callGoal}
 Terms on the table: ${s.terms}
 Each category is graded out of 100 on execution precision, and "overallScore" is the weighted average of those categories (0-100).
-Score the rep against this system:
-- 4-Step Discovery Protocol: (1) asked biggest problem, (2) repeated exact words, (3) highlighted the 6-month consequence of inaction, (4) Solution → Feature → Outcome framed as revenue and neural wealth.
-- AAAR Objection Framework: Acknowledge, Ask for context, Answer the limiting belief, Reframe investment vs. 6-month cost of inaction.
-- Core principles: selling is clarification not convincing; escape pain over pleasure; no-oriented questions that preserve autonomy; embedded commands; always "investment" never "price/cost".
-- Book principles: Never Split the Difference (tactical empathy, mirroring, labeling, calibrated questions), Straight Line Persuasion (certainty in product/operator/company, looping), SPIN Selling (Situation, Problem, Implication, Need-payoff).
+
+Score the rep against this exact system:
+
+4-Step Discovery Protocol:
+${discoveryProtocolText()}
+
+AAAR Objection Framework:
+${aaarFrameworkText()}
+
+Core principles:
+${corePrinciplesText()}
+
+Book principles: Never Split the Difference (tactical empathy, mirroring, labeling, calibrated questions), Straight Line Persuasion (certainty in product/operator/company, looping), SPIN Selling (Situation, Problem, Implication, Need-payoff).
+
 TRANSCRIPT:
 ${convo || '(no conversation took place)'}
 Return ONLY valid JSON, no markdown fences, matching exactly this shape:
@@ -518,12 +587,14 @@ Return ONLY valid JSON, no markdown fences, matching exactly this shape:
     { "name": "Tactical Empathy & Mirroring", "score": 0-100, "notes": "" },
     { "name": "SPIN Questioning", "score": 0-100, "notes": "" },
     { "name": "Certainty & Straight Line Control", "score": 0-100, "notes": "" },
-    { "name": "Language Discipline (Investment vs Price)", "score": 0-100, "notes": "" }
+    { "name": "Language Discipline (Investment vs Price)", "score": 0-100, "notes": "" },
+    { "name": "Close Structure (Specific Choice & Silence)", "score": 0-100, "notes": "" }
   ],
   "discoverySteps": [
     { "step": "Asked biggest problem", "hit": true },
-    { "step": "Repeated exact words", "hit": false },
-    { "step": "Highlighted 6-month consequence", "hit": false },
+    { "step": "Dug 3-4 layers deeper (why is that important)", "hit": false },
+    { "step": "Asked the 6-month emotional consequence question", "hit": false },
+    { "step": "Mirrored their words back", "hit": false },
     { "step": "Solution → Feature → Outcome", "hit": false }
   ],
   "strengths": ["..."],
