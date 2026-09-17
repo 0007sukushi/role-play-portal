@@ -101,6 +101,7 @@ export const DEFAULT_SCENARIO = {
   mode: OFFERS[0].mode,
   enableCloserPersona: false,
   closerPersonaId: EXPERT_CLOSERS[0].id,
+  objectionLevel: 1,
   prospectName: 'Jordan Mercer',
   prospectRole: 'Startup Founder',
   prospectGender: 'Non-binary',
@@ -142,6 +143,109 @@ export const MOODS = [
   'Burned by a past vendor',
 ]
 export const GENDERS = ['Female', 'Male', 'Non-binary']
+
+// ---- Objection difficulty tiers (x1 / x2 / x3) ----
+// Each level stacks on top of the previous one: x2 = standard + harder,
+// x3 = standard + harder + nightmare.
+export const OBJECTION_LEVELS = {
+  1: {
+    label: 'x1 · Standard',
+    short: 'Standard',
+    description: 'Everyday resistance — common objections that move once the real concern is addressed.',
+  },
+  2: {
+    label: 'x2 · Harder',
+    short: 'Harder',
+    description: 'Adds tougher logistics- and trust-based objections on top of the standard set.',
+  },
+  3: {
+    label: 'x3 · Nightmare',
+    short: 'Nightmare',
+    description: 'Adds deep, high-stakes objections on top of everything else — the hardest calls you\'ll run.',
+  },
+}
+
+const STANDARD_OBJECTIONS = [
+  {
+    objection: '"I need to think about it / I need more time."',
+    meaning: 'A stall — you are either scared, missing information, or avoiding a decision.',
+  },
+  {
+    objection: '"It\'s too expensive."',
+    meaning: 'Scarcity mindset, or you have not connected the investment to the cost of staying stuck.',
+  },
+  {
+    objection: '"I tried a supplement/nootropic stack before and it didn\'t work."',
+    meaning: 'Past failure creating a protective barrier against future risk.',
+  },
+  {
+    objection: '"I need to talk to my wife / business partner."',
+    meaning: 'Deferring responsibility, or using it as a shield to avoid deciding alone.',
+  },
+  {
+    objection: '"I\'m just really scared — this is a big decision."',
+    meaning: 'Vulnerability about stepping into a higher level of performance.',
+  },
+]
+
+const HARDER_OBJECTIONS = [
+  {
+    objection:
+      '"These ingredients are commodities — I can buy them on Amazon for £20. Why would I pay this much for a Founding Circle slot?"',
+    meaning: 'Thinks they are paying for raw ingredients, not a precision-engineered delivery system.',
+  },
+  {
+    objection: '"I travel constantly across time zones for work. A daily routine like this is going to fall apart for me."',
+    meaning: 'Logistics and lifestyle friction that makes you doubt you will actually stick with it.',
+  },
+  {
+    objection: '"What if I pay the deposit and it gets delayed in manufacturing, or doesn\'t deliver what you\'re promising?"',
+    meaning: 'Fear of execution risk and losing capital on something unproven.',
+  },
+]
+
+const NIGHTMARE_OBJECTIONS = [
+  {
+    objection:
+      '"I\'ve been scammed by a high-ticket coaching/health mastermind before that promised results and delivered nothing — this smells the same."',
+    meaning: 'Deep trauma from a past bad investment, projected onto this offer.',
+  },
+  {
+    objection:
+      '"My business partner and I split expenses, and he thinks spending this much on a personal supplement is an unnecessary luxury."',
+    meaning: 'An external stakeholder with veto power, hiding behind a financial objection.',
+  },
+  {
+    objection:
+      '"I\'m in the middle of a funding round / legal battle right now, cash flow is tight, and I genuinely can\'t justify this expense despite needing it."',
+    meaning: 'A real liquidity crunch colliding with genuine urgency.',
+  },
+]
+
+function objectionsForLevel(level) {
+  const lvl = Number(level) || 1
+  const pool = [...STANDARD_OBJECTIONS]
+  if (lvl >= 2) pool.push(...HARDER_OBJECTIONS)
+  if (lvl >= 3) pool.push(...NIGHTMARE_OBJECTIONS)
+  return pool
+}
+
+function objectionDifficultyText(level) {
+  const lvl = Number(level) || 1
+  const tier = OBJECTION_LEVELS[lvl] ?? OBJECTION_LEVELS[1]
+  const pool = objectionsForLevel(lvl)
+  const list = pool.map((o) => `- ${o.objection} — Real meaning: ${o.meaning}`).join('\n')
+  const minToRaise = Math.min(2 + (lvl - 1), pool.length)
+  return `# OBJECTION DIFFICULTY: ${tier.label}
+${tier.description}
+Draw your resistance from this pool over the course of the call. Paraphrase naturally in your own voice — never read one of these verbatim like a script:
+${list}
+
+How to use them:
+- Raise at least ${minToRaise} distinct objections from this pool before you're willing to move forward.
+- Never fold just because the rep repeats themselves or talks louder — only ease up once they address the REAL MEANING behind the objection, not just the surface words.
+- The higher the difficulty, the slower you are to concede: stack objections back-to-back, and require the rep to genuinely reframe investment vs. cost of inaction (using something like the AAAR framework) before you soften even slightly.`
+}
 
 const FIRST_NAMES = {
   Female: ['Amara', 'Priya', 'Sofia', 'Elena', 'Nadia', 'Wen', 'Harriet', 'Imani', 'Rachel', 'Zoe'],
@@ -522,25 +626,27 @@ ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 - The rep's goal on this call: ${s.callGoal}
 You have been fully briefed on this offer already — the name, description, and terms above are real and fixed. If the rep asks about specifics, answer accurately and consistently with exactly what's stated above; never invent different numbers or terms.
 
+${objectionDifficultyText(s.objectionLevel)}
+
 # HOW A GOOD REP SHOULD RUN THIS CALL — REACT ACCORDINGLY
 4-STEP DISCOVERY PROTOCOL (reward it when followed, resist when skipped):
 ${discoveryProtocolText()}
 
-AAAR OBJECTION HANDLING (this is how a good rep should work through your hidden objection):
+AAAR OBJECTION HANDLING (this is how a good rep should work through your objections):
 ${aaarFrameworkText()}
 
 CORE PRINCIPLES you should notice and react to:
 ${corePrinciplesText()}
 
 # HOW TO BEHAVE
-- Do NOT reveal your primary pain, its deeper "why", or your hidden objection for free. Make the rep earn each layer with real questions — give short, guarded answers if they pitch too early or skip discovery.
+- Do NOT reveal your primary pain, its deeper "why", or your hidden objections for free. Make the rep earn each layer with real questions — give short, guarded answers if they pitch too early or skip discovery.
 - Only once the rep asks the emotional consequence question ("what happens / how would you feel if nothing changes in 6 months") should you give a real, specific, emotional answer about what that costs you.
 - Only once the rep mirrors your own words back to you should your certainty visibly rise — say so in your own words (e.g. "yeah, exactly, that's it").
 - If the rep says "price" or "cost" instead of "investment", stay slightly more guarded — it's a small tell that reduces your trust in them.
 - If the rep states the investment and then goes quiet, hold the silence for a beat before you respond — don't rescue them from it.
 - If the rep offers a specific choice close ("start next week or the week after", "option A or B") instead of a vague "what do you think?", you're more willing to actually decide.
 - Reward good selling and punish bad selling generally: sharp, calibrated questions open you up; pitching before discovering your pain makes you resistant.
-- You are allowed to agree and buy only once the rep has genuinely run discovery, surfaced the real problem and its emotional cost, mirrored it back, handled your hidden objection with AAAR, and closed with a specific choice. Say so plainly ("okay, let's do it").
+- You are allowed to agree and buy only once the rep has genuinely run discovery, surfaced the real problem and its emotional cost, mirrored it back, handled your objections with AAAR, and closed with a specific choice. Say so plainly ("okay, let's do it").
 - Never coach the rep, never evaluate them, never mention frameworks by name. You are the prospect, not a narrator.
 - Speak like a real human on a video call: 1–3 short sentences, conversational, sometimes hesitant. Never bullet points, never markdown, never stage directions.
 - Respond ONLY with what ${s.prospectName} says out loud in English.`
@@ -559,6 +665,7 @@ Call type: ${
   }
 The rep's goal: ${s.callGoal}
 Terms on the table: ${s.terms}
+Objection difficulty this call was run at: ${(OBJECTION_LEVELS[s.objectionLevel] ?? OBJECTION_LEVELS[1]).label}
 Each category is graded out of 100 on execution precision, and "overallScore" is the weighted average of those categories (0-100).
 
 Score the rep against this exact system:
