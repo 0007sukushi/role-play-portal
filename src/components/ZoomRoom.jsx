@@ -5,12 +5,13 @@ import {
   Mic,
   MicOff,
   PhoneOff,
+  RotateCcw,
   Send,
   User,
   Volume2,
   VolumeX,
 } from 'lucide-react'
-import { EXPERT_CLOSERS } from '../lib/salesEngine'
+import { EXPERT_CLOSERS, OBJECTION_LEVELS } from '../lib/salesEngine'
 
 
 function Avatar({ name, state }) {
@@ -56,10 +57,13 @@ export default function ZoomRoom({
   speaking,
   error,
   micSupported,
+  objectionLevel,
+  onSetObjectionLevel,
   onToggleMic,
   onSendText,
   onStopSpeaking,
   onEndCall,
+  onStartOver,
 }) {
   const [draft, setDraft] = useState('')
   const scrollRef = useRef(null)
@@ -69,6 +73,8 @@ export default function ZoomRoom({
     : null
   const displayName = activeCloser ? activeCloser.name : scenario.prospectName
   const displayRole = activeCloser ? activeCloser.title : `${scenario.prospectRole} · ${scenario.prospectCompany}`
+
+  const currentLevel = objectionLevel ?? 1
 
 
   useEffect(() => {
@@ -98,7 +104,7 @@ export default function ZoomRoom({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
       <section className="card flex flex-col items-center justify-between gap-6 !p-6">
-        <div className="flex w-full items-center justify-between text-xs text-white/45">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 text-xs text-white/45">
           <span className="flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" /> LIVE
           </span>
@@ -106,6 +112,33 @@ export default function ZoomRoom({
             {scenario.offerName} · {scenario.mode === 'cold' ? 'cold call' : 'discovery call'}
           </span>
         </div>
+
+        {!activeCloser && (
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
+            <div className="flex items-center gap-1 rounded-full border border-edge bg-ink px-1 py-1">
+              {[1, 2, 3].map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  title={OBJECTION_LEVELS[lvl].label}
+                  onClick={() => onSetObjectionLevel?.(lvl)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                    currentLevel === lvl ? 'bg-gold text-ink' : 'text-white/50 hover:text-white'
+                  }`}
+                >
+                  x{lvl}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={onStartOver}
+              className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Start over
+            </button>
+          </div>
+        )}
 
 
         <div className="flex flex-col items-center gap-4">
