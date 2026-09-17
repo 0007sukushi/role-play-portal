@@ -183,7 +183,6 @@ export default function App() {
     resetCall()
     setCallActive(false)
     setGradedCall(call)
-    randomizeProspect()
     setTab('scorecard')
     generateScorecard(call)
   }
