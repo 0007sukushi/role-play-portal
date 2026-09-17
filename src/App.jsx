@@ -140,6 +140,10 @@ export default function App() {
     setScenario((prev) => ({ ...prev, ...randomProspect(prev.offerId) }))
   }, [])
 
+  const setObjectionLevel = useCallback((lvl) => {
+    setScenario((prev) => ({ ...prev, objectionLevel: lvl }))
+  }, [])
+
   const startCall = () => {
     resetCall()
     setScorecard(null)
@@ -210,10 +214,13 @@ export default function App() {
             error={callError}
             micOn={micOn}
             micSupported={micSupported}
+            objectionLevel={scenario.objectionLevel}
+            onSetObjectionLevel={setObjectionLevel}
             onToggleMic={() => setMicOn((v) => !v)}
             onSendText={sendToProspect}
             onStopSpeaking={cancelSpeech}
             onEndCall={endCall}
+            onStartOver={resetCall}
           />
         )}
         {tab === 'scorecard' && (
