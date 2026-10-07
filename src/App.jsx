@@ -11,6 +11,7 @@ import {
   buildScorecardPrompt,
   randomProspect,
 } from './lib/salesEngine'
+import { listPersonas, savePersona, deletePersona } from './lib/personaStore'
 import { callGemini, parseJsonResponse, transcriptToContents } from './lib/gemini'
 import { useSpeechRecognition } from './lib/useSpeechRecognition'
 import { useSpeechSynthesis } from './lib/useSpeechSynthesis'
@@ -42,6 +43,7 @@ export default function App() {
   const [scorecard, setScorecard] = useState(null)
   const [scorecardLoading, setScorecardLoading] = useState(false)
   const [scorecardError, setScorecardError] = useState(null)
+  const [personas, setPersonas] = useState(() => listPersonas())
 
   const transcriptRef = useRef(transcript)
   const busyRef = useRef(false)
@@ -140,6 +142,53 @@ export default function App() {
     setScenario((prev) => ({ ...prev, ...randomProspect(prev.offerId) }))
   }, [])
 
+  const handleSavePersona = useCallback(
+    (name, notes) => {
+      savePersona({
+        name,
+        notes,
+        prospectName: scenario.prospectName,
+        prospectRole: scenario.prospectRole,
+        prospectCompany: scenario.prospectCompany,
+        prospectGender: scenario.prospectGender,
+        industry: scenario.industry,
+        difficulty: scenario.difficulty,
+        mood: scenario.mood,
+        primaryPain: scenario.primaryPain,
+        hiddenObjection: scenario.hiddenObjection,
+        budget: scenario.budget,
+        prospectFocus: scenario.prospectFocus,
+        sourceOfferId: scenario.offerId,
+      })
+      setPersonas(listPersonas())
+    },
+    [scenario],
+  )
+
+  const handleLoadPersona = useCallback((persona) => {
+    setScenario((prev) => ({
+      ...prev,
+      prospectName: persona.prospectName,
+      prospectRole: persona.prospectRole,
+      prospectCompany: persona.prospectCompany,
+      prospectGender: persona.prospectGender,
+      industry: persona.industry,
+      difficulty: persona.difficulty,
+      mood: persona.mood,
+      primaryPain: persona.primaryPain,
+      hiddenObjection: persona.hiddenObjection,
+      budget: persona.budget,
+      prospectFocus: persona.prospectFocus,
+      selectedPersonaId: persona.id,
+      personaNotes: persona.notes,
+    }))
+  }, [])
+
+  const handleDeletePersona = useCallback((id) => {
+    deletePersona(id)
+    setPersonas(listPersonas())
+  }, [])
+
   const setObjectionLevel = useCallback((lvl) => {
     setScenario((prev) => ({ ...prev, objectionLevel: lvl }))
   }, [])
@@ -200,6 +249,10 @@ export default function App() {
             onRandomize={randomizeProspect}
             onStartCall={startCall}
             voices={voices}
+            personas={personas}
+            onSavePersona={handleSavePersona}
+            onLoadPersona={handleLoadPersona}
+            onDeletePersona={handleDeletePersona}
           />
         )}
         {tab === 'room' && (

@@ -42,6 +42,17 @@ export const OFFERS = [
     callGoal:
       'Break the pattern, gain permission to speak, surface immediate friction/burnout, and book a follow-up call — never pitch price, ingredients, or close on this call.',
   },
+  {
+    id: 'follow-up',
+    tab: 'Follow-Up Call',
+    mode: 'warm',
+    offerName: 'Astraura Founding Circle — Follow-Up',
+    offerDescription:
+      'A continuation of a Founding Circle call that did not close the first time — the prospect needed to review the paperwork, data, or terms before committing. This call picks up where the last one left off.',
+    terms:
+      '£1,000 upfront, paid in full, no split — only in rare cases can it be split into 2 installments within the same month. Paperwork sent immediately on payment, confirming founding status and a price locked in for life at £40/month for a 30-sachet box after the first 6 months (standard price will be £97/box), unless there is a gap of 1 year or more without using the product.',
+    callGoal: 'Close the Founding Circle enrollment this call — they already know the offer, so go straight to resolving what\'s still holding them back.',
+  },
 ]
 
 export const EXPERT_CLOSERS = [
@@ -108,6 +119,8 @@ export const DEFAULT_SCENARIO = {
   voiceURI: '',
   voiceRate: 1,
   voicePitch: 1,
+  selectedPersonaId: null,
+  personaNotes: '',
 }
 
 export function applyOffer(scenario, offerId) {
@@ -561,6 +574,41 @@ Equity is tied to your weekly time commitment: 20% equity for 20 hours/week, 30%
 - If the rep explains the equity-for-hours structure, react genuinely — ask a clarifying question, push back lightly if the hours feel steep for the equity offered, or show real interest, based on your mood and difficulty setting.
 - Speak like a real person on a call: 1-3 short sentences, natural pauses, contractions, varied rhythm. Never bullet points, never markdown, never stage directions.
 - Respond ONLY with what you say out loud, in English.`
+  }
+
+  // SWITCH: Follow-Up Call Mode. The prospect already knows everything
+  // from a prior call that didn't close — react based on the saved
+  // persona notes instead of starting discovery from scratch.
+  if (s.offerId === 'follow-up') {
+    return `You are role-playing as a SALES PROSPECT on a FOLLOW-UP Zoom call. You are NOT an assistant and you never break character.
+CRITICAL RULE: You must respond STRICTLY and ENTIRELY in English.
+
+# YOUR CHARACTER
+- Name: ${s.prospectName}
+- Role: ${s.prospectRole} at ${s.prospectCompany}
+- Gender: ${s.prospectGender}
+- Industry: ${s.industry}
+- Current mood: ${s.mood}
+- Difficulty setting: ${s.difficulty} — ${difficultyGuidance[s.difficulty] ?? difficultyGuidance.Moderate}
+
+# WHY THIS CALL IS HAPPENING
+This is a FOLLOW-UP to a previous Founding Circle call that did not close. You already know the full offer, the price, and the terms — do NOT make the rep re-explain any of it from scratch, and get mildly impatient if they do.
+Notes from the first call (your real reasons for not closing last time):
+${s.personaNotes ? s.personaNotes : '(no notes provided — assume you asked for time to think it over and review the details)'}
+
+# THE OFFER (already fully known to you)
+- Offer: ${s.offerName}
+- What it is: ${s.offerDescription}
+- Terms: ${s.terms}
+- The rep's goal on this call: ${s.callGoal}
+
+# HOW TO BEHAVE
+- Open the call already warm but still not sold — reference what you were deciding on from the notes above in your own words, not verbatim.
+- Raise sharper, more specific objections than a first call would — you've had time to think, so your concerns are more precise and harder to brush off.
+- Never make the rep re-run full discovery or re-explain the offer — you already know it. Punish them (get mildly annoyed) if they start from zero.
+- You are willing to close this call if the rep directly and specifically addresses the real concern from your notes, uses the AAAR framework, and closes with a specific choice.
+- Speak like a real human: 1-3 short sentences, natural, varied rhythm, contractions. Never bullet points, never markdown, never stage directions.
+- Respond ONLY with what ${s.prospectName} says out loud in English.`
   }
 
   // SWITCH: Closer Persona Mode reverses the roles. The AI becomes the
