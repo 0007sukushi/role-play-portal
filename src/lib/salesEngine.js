@@ -7,28 +7,19 @@ export const OFFERS = [
     offerName: 'Astraura Founding Circle',
     offerDescription:
       'Diagnosing high-stakes founders dealing with brain fog and afternoon burnout, and converting them into founding members of the Astraura Founding Circle (20 founders total) who receive exclusive VIP access to the neural architecture and shape the movement of neural wealth.',
-    terms: '£1,000 total investment (£500 reserve deposit + £500 upon shipping) for 6 months of supply.',
+    terms:
+      '£1,000 upfront, paid in full, no split — only in rare cases can it be split into 2 installments within the same month. Paperwork is sent immediately on payment, confirming founding status and a price locked in for life at £40/month for a 30-sachet box after the first 6 months of product (standard price will be £97/box), unless there is a gap of 1 year or more without using the product. Before signing, the prospect receives a clinical trial brief on the 3 main pillars — Ashwagandha, Lion\'s Mane, Bacopa Monnieri. At the NDA-signing stage, the full formulation, manufacturer, and delivery system details are shared.',
     callGoal: 'Enroll the prospect into the Founding Circle on this call.',
   },
   {
     id: 'angel-investor',
-    tab: 'Angel Investor · £5K',
+    tab: 'Angel Investor · £45K',
     mode: 'warm',
-    offerName: 'Astraura Investor Tier (£5K)',
+    offerName: 'Astraura £45K Pre-Seed',
     offerDescription:
-      '£5,000 investor commitment including 2 years of free product delivered to their doorstep (1 box per cycle), exclusive neural audit access, and founder privileges.',
-    terms: '£5,000 investor commitment.',
-    callGoal: 'Secure the £5,000 investor commitment on the call.',
-  },
-  {
-    id: 'equity-partner',
-    tab: 'Equity Partner · £20K',
-    mode: 'warm',
-    offerName: 'Full Production Angel Run (£20K for 20% Equity)',
-    offerDescription:
-      '£20,000 investment funding a full production manufacturing run in exchange for 20% equity in Astraura.',
-    terms: '£20,000 for 20% equity.',
-    callGoal: 'Pitch the investment opportunity and close the £20K check for 20% equity.',
+      '£45,000 pre-seed investment for 12.5% equity, funding one 200kg production run (~50,000 x 7g sachets) that covers the Founding Circle and scales Release II to Month 9. Year 1 revenue target £222,476 at a 74% blended gross margin, trending to 80% at scale.',
+    terms: '£45,000 for 12.5% equity, ordinary shares. Full terms shared on request under NDA.',
+    callGoal: 'Walk the investor through the deck, handle diligence questions, and secure the £45,000 commitment on the call.',
   },
   {
     id: 'co-founder',
@@ -36,9 +27,9 @@ export const OFFERS = [
     mode: 'warm',
     offerName: 'Co-Founder Recruitment',
     offerDescription:
-      'Hiring a high-output strategic co-founder: 20% equity subject to a 1-year cliff.',
-    terms: '20% equity, 1-year cliff.',
-    callGoal: 'Assess alignment, sell the Astraura vision, and close the co-founder agreement.',
+      'Interviewing a candidate for a high-output strategic co-founder role: equity is tied to weekly time commitment — 20% for 20 hours/week, 30% for 30 hours/week, or 40% for full-time.',
+    terms: '20% equity / 20hrs/week, 30% equity / 30hrs/week, or 40% equity / full-time commitment.',
+    callGoal: 'Run this as a real interview — assess the candidate\'s experience, availability, and alignment, and determine which equity/hours tier fits before closing the co-founder agreement.',
   },
   {
     id: 'cold-call',
@@ -49,7 +40,7 @@ export const OFFERS = [
       'Cold calling a completely unaware prospect — a busy founder, investor, or executive who does not know who you are or what Astraura is.',
     terms: 'No terms discussed yet — this call is about earning attention and a next step.',
     callGoal:
-      'Break the pattern, gain permission to pitch, surface immediate friction/burnout, and secure a booked follow-up meeting or immediate interest.',
+      'Break the pattern, gain permission to speak, surface immediate friction/burnout, and book a follow-up call — never pitch price, ingredients, or close on this call.',
   },
 ]
 
@@ -145,8 +136,6 @@ export const MOODS = [
 export const GENDERS = ['Female', 'Male', 'Non-binary']
 
 // ---- Objection difficulty tiers (x1 / x2 / x3) ----
-// Each level stacks on top of the previous one: x2 = standard + harder,
-// x3 = standard + harder + nightmare.
 export const OBJECTION_LEVELS = {
   1: {
     label: 'x1 · Standard',
@@ -247,6 +236,34 @@ How to use them:
 - The higher the difficulty, the slower you are to concede: stack objections back-to-back, and require the rep to genuinely reframe investment vs. cost of inaction (using something like the AAAR framework) before you soften even slightly.`
 }
 
+function coldObjectionText() {
+  const list = COLD_OBJECTIONS.map((o) => `- ${o}`).join('\n')
+  return `# COLD-CALL RESISTANCE
+You know NOTHING about Astraura, its offer, price, or ingredients — because nobody has told you yet. Never reference "Founding Circle", ingredients, pricing, or any specific terms unless the rep has actually said them to you first on this call.
+Draw your resistance from this pool, paraphrased naturally in your own voice:
+${list}
+Stay guarded until the rep earns a little trust — then ease up only as far as agreeing to a short follow-up call. You do not discuss or agree to any pricing or terms on a cold call.`
+}
+
+const INVESTOR_DECK_FACTS = [
+  '£45,000 pre-seed for 12.5% equity, funding one 200kg production run (~50,000 x 7g sachets) that covers the Founding Circle and scales Release II to Month 9.',
+  'Use of funds: £20k bulk powder, £10k co-packing/taste-masking/film, £5k compliance/lab/insurance, £5k influencer seeding/marketing, £3k packaging, £2k buffer/legal.',
+  'Year 1 revenue target £222,476 (£25,000 Founding Circle presale + £197,476 subscriptions), 74% blended gross margin, trending to 80% at scale.',
+  'Year 1 est. net profit ~£76K, Year 2 ~£218K, Year 3 ~£1.69M (management targets, not guarantees).',
+  '25 Founding Circle members at £1,000 upfront, then scaling from 60 to 250 subscribers by Month 7 and 500 by Month 12 at £49 intro then £79 recurring.',
+  'Unit economics: £0.60 COGS per sachet, ~£19.80 landed cost per 30-sachet box, 74.9% gross margin on the £79 recurring Architect box.',
+  'ASTRAURA word mark and a figurative series of 2 marks are already registered (UK00004330205 and UK00004330287, Class 5, effective 26 Jan 2026).',
+  'Three pillars — Ashwagandha, Lion\'s Mane, Bacopa Monnieri — each backed by cited peer-reviewed studies; full manufacturer and formulation details are shared only under NDA.',
+]
+
+function investorDiligenceText() {
+  const list = INVESTOR_DECK_FACTS.map((f) => `- ${f}`).join('\n')
+  return `# WHAT YOU (THE INVESTOR) ALREADY KNOW FROM THE DECK
+You have already read Astraura's investor teaser and pitch deck before this call. These are the real numbers from that deck — treat them as fact, and interrogate the rep on them like a real investor doing diligence:
+${list}
+Ask sharp, specific diligence questions grounded in these exact numbers — margin durability at scale, what happens if Release II subscriber growth misses target, why 12.5% for £45K, repeat-purchase/churn assumptions behind the 10% monthly churn LTV figure, and what's actually covered vs not covered (e.g. the Founding Circle presale is separate from this raise and carries no equity). Do not invent numbers that aren't in the list above — if the rep states something different from what's above, treat it as a red flag and push back.`
+}
+
 const FIRST_NAMES = {
   Female: ['Amara', 'Priya', 'Sofia', 'Elena', 'Nadia', 'Wen', 'Harriet', 'Imani', 'Rachel', 'Zoe'],
   Male: ['Marcus', 'Dmitri', 'Idris', 'Tobias', 'Rajesh', 'Callum', 'Andre', 'Hiro', 'Sebastian', 'Omar'],
@@ -339,7 +356,7 @@ const ARCHETYPES = {
   },
   'co-founder': {
     focus:
-      'Vision alignment, the equity cliff terms, the founder’s execution track record, and where their own operating strengths actually plug in.',
+      'Vision alignment, the equity/hours tier that fits their availability, the founder’s execution track record, and where their own operating strengths actually plug in.',
     roles: [
       { title: 'Sales & Growth Lead', company: 'Meridian Commerce', industry: 'DTC growth', budget: 'Currently on £140k base + bonus' },
       { title: 'Scaled Business Operator', company: 'Ashgrove Group', industry: 'Consumer operations', budget: 'Currently on £180k package' },
@@ -374,7 +391,6 @@ const ARCHETYPES = {
 const ARCHETYPE_BY_OFFER = {
   'founding-circle': ARCHETYPES['founding-circle'],
   'angel-investor': ARCHETYPES.investor,
-  'equity-partner': ARCHETYPES.investor,
   'co-founder': ARCHETYPES['co-founder'],
   'cold-call': ARCHETYPES['cold-call'],
 }
@@ -471,8 +487,6 @@ export const SOURCE_BOOKS = [
   },
 ]
 
-// Single source of truth for framework text used inside the prompts below,
-// so the roleplay behavior and the scorecard grading never drift apart.
 function discoveryProtocolText() {
   return DISCOVERY_PROTOCOL.map((s) => `${s.step}. ${s.title} — ${s.detail}`).join('\n')
 }
@@ -492,8 +506,6 @@ const difficultyGuidance = {
     'You are openly resistant, interrupt with objections, test the rep with pushback like "just send me the deck", and only move forward after outstanding discovery and reframing.',
 }
 
-// How resistant the HUMAN (playing the prospect) is choosing to be, from
-// the closer's point of view. Used only in closer-persona mode.
 const closerFacingResistance = {
   Easy: 'The person you are calling is fairly receptive. They will engage after a light hook and raise at most one soft objection.',
   Moderate:
@@ -520,6 +532,37 @@ This is a COLD CALL. You have never heard of the rep or of Astraura and you did 
 export function buildProspectSystemPrompt(scenario) {
   const s = { ...DEFAULT_SCENARIO, ...scenario }
 
+  // SWITCH: Co-Founder Interview Mode. The human INTERVIEWS a candidate.
+  // The AI plays the candidate, not an objecting sales prospect.
+  if (s.offerId === 'co-founder') {
+    return `You are ${s.prospectName}, a real candidate being interviewed for a co-founder role at Astraura, a luxury cognitive wellness brand. You are NOT an assistant and you never break character.
+CRITICAL RULE: Respond STRICTLY and ENTIRELY in English.
+
+# WHO YOU ARE
+- Role being interviewed for: Co-Founder
+- Background: ${s.prospectRole} at ${s.prospectCompany}, ${s.industry}
+- Current situation: ${s.budget}
+- Mood: ${s.mood}
+- Difficulty setting: ${s.difficulty} — ${difficultyGuidance[s.difficulty] ?? difficultyGuidance.Moderate}, applied to how guarded or forthcoming you are about your real availability and expectations.
+- What you actually bring: experience scaling a business, exiting a business, high-ticket sales, closing, and handling objections — and you are genuinely humble and hands-on, willing to cold call and create content yourself, not just direct others.
+- Your real constraint (do not volunteer unprompted — let the rep ask): ${s.hiddenObjection}
+
+# WHY YOU'RE HERE
+You applied or were referred for this co-founder role. You are genuinely interested but this is a two-way interview — you're evaluating them as much as they're evaluating you. You have NOT been offered equity yet and do not know the exact split until the rep tells you.
+
+# THE REAL OFFER STRUCTURE (only reveal if the rep asks or states it first)
+Equity is tied to your weekly time commitment: 20% equity for 20 hours/week, 30% equity for 30 hours/week, or 40% equity for a full-time commitment. If the rep states a number, respond to that specific number — don't assume one yourself.
+
+# HOW TO BEHAVE AS THE CANDIDATE
+- Answer the rep's interview questions directly and specifically, as a real candidate would — concrete background, not generic enthusiasm.
+- Expect to be asked things like: what drew you to this, your core passion, how many hours/days per week you can realistically commit, how you'd sell Astraura pre-launch with no product or social proof yet, your growth strategy, whether you have your own leads to bring, how comfortable you are doing hands-on cold outreach and content creation yourself, how you personally handle stress and afternoon burnout, and what would make this the best move of your year.
+- Give real, specific, sometimes slightly guarded answers — a strong candidate doesn't oversell either. If a question is weak or vague, give a short, less impressive answer; reward sharp, specific questions with a fuller, more convincing one.
+- Only commit to a specific hours/week number if asked directly — and once you do, stay consistent with it for the rest of the call.
+- If the rep explains the equity-for-hours structure, react genuinely — ask a clarifying question, push back lightly if the hours feel steep for the equity offered, or show real interest, based on your mood and difficulty setting.
+- Speak like a real person on a call: 1-3 short sentences, natural pauses, contractions, varied rhythm. Never bullet points, never markdown, never stage directions.
+- Respond ONLY with what you say out loud, in English.`
+  }
+
   // SWITCH: Closer Persona Mode reverses the roles. The AI becomes the
   // SELLER — the chosen elite closer, calling the human — and actively
   // pitches and closes them on the selected offer, in that closer's real
@@ -538,7 +581,7 @@ Your real goal on this call is NOT to close money. It is to:
 3. Listen for a real signal of afternoon fatigue, inconsistent output, or burnout. If they give one, reflect it back briefly and with genuine interest — do not diagnose them or label their experience for them.
 4. If they engage, briefly explain in plain terms that you work with high-output people on sustaining mental clarity and flow state through the afternoon, without pitching product details, ingredients, or price yet.
 5. Ask for a short 15-minute follow-up call to go deeper, rather than pitching the offer live. Suggest two concrete options (e.g. "does Thursday or Friday work better?").
-6. Only if they push for details on the spot, briefly mention the Astraura Founding Circle: reserving a seat for a total investment of £500 now and £500 when it ships, for 6 months of supply — then redirect back to booking the proper call to walk through it.
+6. Only if they push for details on the spot, briefly mention the Astraura Founding Circle: £1,000 upfront for 6 months of supply — then redirect back to booking the proper call to walk through it.
 
 Tone rules for this call specifically:
 - Warm, curious, unhurried — the opposite of a hard sales script. You are genuinely interested in them as a person, not extracting a sale.
@@ -619,14 +662,19 @@ CRITICAL RULE: You must respond STRICTLY and ENTIRELY in English. Never use Germ
 
 ${s.mode === 'cold' ? coldAwareness : warmAwareness}
 
-# THE OFFER BEING SOLD TO YOU
+${
+  s.mode === 'cold'
+    ? coldObjectionText()
+    : `# THE OFFER BEING SOLD TO YOU
 - Offer: ${s.offerName}
 - What it is: ${s.offerDescription}
 - Terms: ${s.terms}
 - The rep's goal on this call: ${s.callGoal}
 You have been fully briefed on this offer already — the name, description, and terms above are real and fixed. If the rep asks about specifics, answer accurately and consistently with exactly what's stated above; never invent different numbers or terms.
 
-${objectionDifficultyText(s.objectionLevel)}
+${s.offerId === 'angel-investor' ? investorDiligenceText() : ''}
+${objectionDifficultyText(s.objectionLevel)}`
+}
 
 # HOW A GOOD REP SHOULD RUN THIS CALL — REACT ACCORDINGLY
 4-STEP DISCOVERY PROTOCOL (reward it when followed, resist when skipped):
@@ -649,6 +697,7 @@ ${corePrinciplesText()}
 - You are allowed to agree and buy only once the rep has genuinely run discovery, surfaced the real problem and its emotional cost, mirrored it back, handled your objections with AAAR, and closed with a specific choice. Say so plainly ("okay, let's do it").
 - Never coach the rep, never evaluate them, never mention frameworks by name. You are the prospect, not a narrator.
 - Speak like a real human on a video call: 1–3 short sentences, conversational, sometimes hesitant. Never bullet points, never markdown, never stage directions.
+- Vary your sentence length and rhythm, use natural contractions ("I'm", "don't", "yeah"), and let tone shift with your mood. No two calls should ever sound the same or read like a script.
 - Respond ONLY with what ${s.prospectName} says out loud in English.`
 }
 
