@@ -22,23 +22,12 @@ function Field({ label, children }) {
   )
 }
 
-export default function SetupTab({
-  scenario,
-  onChange,
-  onReset,
-  onRandomize,
-  onStartCall,
-  voices,
-  personas = [],
-  onSavePersona,
-  onLoadPersona,
-  onDeletePersona,
-}) {
+export default function SetupTab({ scenario, onChange, onReset, onRandomize, onStartCall, voices, onSavePersona }) {
   const set = (key) => (e) => onChange({ ...scenario, [key]: e.target.value })
   const [personaName, setPersonaName] = useState('')
   const [personaNotesDraft, setPersonaNotesDraft] = useState('')
+  const [saved, setSaved] = useState(false)
 
-  // Filter strictly for English voices to prevent German/Arabic/other language bugs
   const englishVoices = voices.filter((v) => !v.lang || v.lang.toLowerCase().startsWith('en'))
   const sortedVoices = [...englishVoices].sort((a, b) => {
     const aIsGood = a.name.includes('Microsoft') || a.name.includes('Natural') || a.name.includes('Google') ? 1 : 0
@@ -48,10 +37,18 @@ export default function SetupTab({
 
   const personaEnabled = Boolean(scenario.enableCloserPersona)
 
+  const handleSave = () => {
+    if (!personaName.trim()) return
+    onSavePersona?.(personaName.trim(), personaNotesDraft.trim())
+    setPersonaName('')
+    setPersonaNotesDraft('')
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       <section className="space-y-6">
-        {/* Choose an offer */}
         <div className="card space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Choose an offer</h2>
           <div className="flex flex-wrap gap-2">
@@ -81,7 +78,6 @@ export default function SetupTab({
           </p>
         </div>
 
-        {/* Expert Closer Persona Toggle & Picker */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -128,7 +124,6 @@ export default function SetupTab({
           )}
         </div>
 
-        {/* Offer Details */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold">
@@ -152,7 +147,6 @@ export default function SetupTab({
           </Field>
         </div>
 
-        {/* AI Prospect */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">AI Prospect</h2>
@@ -219,74 +213,32 @@ export default function SetupTab({
               <input className="field" value={scenario.budget} onChange={set('budget')} />
             </Field>
           </div>
+
+          <div className="space-y-3 border-t border-edge pt-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gold">Save this prospect as a persona</h3>
+            <Field label="Persona name">
+              <input
+                className="field"
+                value={personaName}
+                onChange={(e) => setPersonaName(e.target.value)}
+                placeholder="e.g. Tobias Ravenscroft — cold call 07/10"
+              />
+            </Field>
+            <Field label="Notes (how the call went, what they need before closing)">
+              <textarea
+                className="field h-20 resize-none"
+                value={personaNotesDraft}
+                onChange={(e) => setPersonaNotesDraft(e.target.value)}
+                placeholder="e.g. Needed to review the clinical data before committing. Still unsure about the 6-month lock-in."
+              />
+            </Field>
+            <button type="button" onClick={handleSave} className="btn-gold !px-3 !py-1.5 text-xs">
+              {saved ? 'Saved ✓' : 'Save this persona'}
+            </button>
+            <p className="text-xs text-white/40">Saved personas appear in the Saved Leads tab above.</p>
+          </div>
         </div>
 
-        {/* Saved Personas */}
-        <div className="card space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Saved Personas</h2>
-          <p className="text-xs text-white/45">
-            Save the prospect above as a reusable persona with notes, reload it any time, or select it for a
-            Follow-Up call.
-          </p>
-          <Field label="Persona name">
-            <input
-              className="field"
-              value={personaName}
-              onChange={(e) => setPersonaName(e.target.value)}
-              placeholder="e.g. Tobias Ravenscroft — cold call 07/10"
-            />
-          </Field>
-          <Field label="Notes (how the call went, what they need before closing)">
-            <textarea
-              className="field h-20 resize-none"
-              value={personaNotesDraft}
-              onChange={(e) => setPersonaNotesDraft(e.target.value)}
-              placeholder="e.g. Needed to review the clinical data before committing. Still unsure about the 6-month lock-in."
-            />
-          </Field>
-          <button
-            type="button"
-            onClick={() => {
-              if (!personaName.trim()) return
-              onSavePersona?.(personaName.trim(), personaNotesDraft.trim())
-              setPersonaName('')
-              setPersonaNotesDraft('')
-            }}
-            className="btn-gold !px-3 !py-1.5 text-xs"
-          >
-            Save this persona
-          </button>
-
-          {personas.length > 0 && (
-            <div className="space-y-2 border-t border-edge pt-3">
-              {personas.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-edge bg-ink px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white/85">{p.name}</p>
-                    {p.notes && <p className="truncate text-xs text-white/45">{p.notes}</p>}
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button type="button" onClick={() => onLoadPersona?.(p)} className="btn-ghost !px-2 !py-1 text-[11px]">
-                      Load
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeletePersona?.(p.id)}
-                      className="btn-ghost !px-2 !py-1 text-[11px] text-red-300"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Prospect Voice (English Only) */}
         <div className="card space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gold">Prospect Voice (English Only)</h2>
           <Field label="Voice">
@@ -334,7 +286,6 @@ export default function SetupTab({
         </button>
       </section>
 
-      {/* Right Sidebar */}
       <aside className="space-y-6">
         <div className="card space-y-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold">

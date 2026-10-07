@@ -2,19 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Header from './components/Header'
 import Tabs from './components/Tabs'
 import SetupTab from './components/SetupTab'
+import SavedLeadsTab from './components/SavedLeadsTab'
 import ZoomRoom from './components/ZoomRoom'
 import Scorecard from './components/Scorecard'
 import {
   DEFAULT_SCENARIO,
   EXPERT_CLOSERS,
+  applyPersonaOffer,
   buildProspectSystemPrompt,
   buildScorecardPrompt,
   randomProspect,
 } from './lib/salesEngine'
-import { listPersonas, savePersona, deletePersona } from './lib/personaStore'
 import { callGemini, parseJsonResponse, transcriptToContents } from './lib/gemini'
 import { useSpeechRecognition } from './lib/useSpeechRecognition'
 import { useSpeechSynthesis } from './lib/useSpeechSynthesis'
+import { listPersonas, savePersona, deletePersona } from './lib/personaStore'
 
 const API_KEY_STORAGE = 'rpp.geminiApiKey'
 const SCENARIO_STORAGE = 'rpp.scenario'
@@ -142,65 +144,28 @@ export default function App() {
     setScenario((prev) => ({ ...prev, ...randomProspect(prev.offerId) }))
   }, [])
 
-  const handleSavePersona = useCallback(
-    (name, notes) => {
-      savePersona({
-        name,
-        notes,
-        prospectName: scenario.prospectName,
-        prospectRole: scenario.prospectRole,
-        prospectCompany: scenario.prospectCompany,
-        prospectGender: scenario.prospectGender,
-        industry: scenario.industry,
-        difficulty: scenario.difficulty,
-        mood: scenario.mood,
-        primaryPain: scenario.primaryPain,
-        hiddenObjection: scenario.hiddenObjection,
-        budget: scenario.budget,
-        prospectFocus: scenario.prospectFocus,
-        sourceOfferId: scenario.offerId,
-      })
-      setPersonas(listPersonas())
-    },
-    [scenario],
-  )
-
-  const handleLoadPersona = useCallback((persona) => {
-    setScenario((prev) => ({
-      ...prev,
-      prospectName: persona.prospectName,
-      prospectRole: persona.prospectRole,
-      prospectCompany: persona.prospectCompany,
-      prospectGender: persona.prospectGender,
-      industry: persona.industry,
-      difficulty: persona.difficulty,
-      mood: persona.mood,
-      primaryPain: persona.primaryPain,
-      hiddenObjection: persona.hiddenObjection,
-      budget: persona.budget,
-      prospectFocus: persona.prospectFocus,
-      selectedPersonaId: persona.id,
-      personaNotes: persona.notes,
-    }))
-  }, [])
-
-  const handleDeletePersona = useCallback((id) => {
-    deletePersona(id)
-    setPersonas(listPersonas())
-  }, [])
-
   const setObjectionLevel = useCallback((lvl) => {
     setScenario((prev) => ({ ...prev, objectionLevel: lvl }))
   }, [])
 
-  const startCall = () => {
-    resetCall()
-    setScorecard(null)
-    setScorecardError(null)
-    setCallError(apiKey ? null : 'Add your Gemini API key in the header to start the call.')
-    setCallActive(true)
-    setTab('room')
-  }
+  // overrideScenario, when passed, is applied synchronously to scenarioRef
+  // so the very first message of the call uses the right data immediately —
+  // fixes the stale-data bug when starting a call straight from a saved persona.
+  const startCall = useCallback(
+    (overrideScenario) => {
+      if (overrideScenario) {
+        scenarioRef.current = overrideScenario
+        setScenario(overrideScenario)
+      }
+      resetCall()
+      setScorecard(null)
+      setScorecardError(null)
+      setCallError(apiKeyRef.current ? null : 'Add your Gemini API key in the header to start the call.')
+      setCallActive(true)
+      setTab('room')
+    },
+    [resetCall],
+  )
 
   const openTab = (next) => {
     if (next === 'room' && !callActive) startCall()
@@ -236,6 +201,48 @@ export default function App() {
     generateScorecard(call)
   }
 
+  const handleSavePersona = useCallback(
+    (name, notes) => {
+      savePersona({
+        name,
+        notes,
+        prospectName: scenario.prospectName,
+        prospectRole: scenario.prospectRole,
+        prospectCompany: scenario.prospectCompany,
+        prospectGender: scenario.prospectGender,
+        industry: scenario.industry,
+        difficulty: scenario.difficulty,
+        mood: scenario.mood,
+        primaryPain: scenario.primaryPain,
+        hiddenObjection: scenario.hiddenObjection,
+        budget: scenario.budget,
+        prospectFocus: scenario.prospectFocus,
+        sourceOfferId: scenario.offerId,
+      })
+      setPersonas(listPersonas())
+    },
+    [scenario],
+  )
+
+  const handleDeletePersona = useCallback((id) => {
+    deletePersona(id)
+    setPersonas(listPersonas())
+  }, [])
+
+  const handleFollowUp = useCallback(
+    (persona) => {
+      startCall(applyPersonaOffer(persona, 'follow-up'))
+    },
+    [startCall],
+  )
+
+  const handlePractice = useCallback(
+    (persona) => {
+      startCall(applyPersonaOffer(persona, persona.sourceOfferId || 'founding-circle'))
+    },
+    [startCall],
+  )
+
   return (
     <div className="min-h-full bg-ink">
       <Header apiKey={apiKey} onApiKeyChange={setApiKey} />
@@ -247,12 +254,17 @@ export default function App() {
             onChange={setScenario}
             onReset={() => setScenario(DEFAULT_SCENARIO)}
             onRandomize={randomizeProspect}
-            onStartCall={startCall}
+            onStartCall={() => startCall()}
             voices={voices}
-            personas={personas}
             onSavePersona={handleSavePersona}
-            onLoadPersona={handleLoadPersona}
-            onDeletePersona={handleDeletePersona}
+          />
+        )}
+        {tab === 'leads' && (
+          <SavedLeadsTab
+            personas={personas}
+            onFollowUp={handleFollowUp}
+            onPractice={handlePractice}
+            onDelete={handleDeletePersona}
           />
         )}
         {tab === 'room' && (

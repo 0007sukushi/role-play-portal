@@ -1,7 +1,8 @@
-import { ClipboardCheck, Settings2, Video } from 'lucide-react'
+import { ClipboardCheck, Settings2, Users, Video } from 'lucide-react'
 
 const TABS = [
   { id: 'setup', label: 'Setup & Scenario Config', icon: Settings2 },
+  { id: 'leads', label: 'Saved Leads', icon: Users },
   { id: 'room', label: 'Simulated Zoom Room', icon: Video },
   { id: 'scorecard', label: 'Post-Call Scorecard', icon: ClipboardCheck },
 ]

@@ -430,6 +430,32 @@ export function randomProspect(offerId) {
   }
 }
 
+export function applyPersonaOffer(persona, offerId) {
+  const offer = OFFERS.find((o) => o.id === offerId) ?? OFFERS[0]
+  return {
+    ...DEFAULT_SCENARIO,
+    prospectName: persona.prospectName,
+    prospectRole: persona.prospectRole,
+    prospectCompany: persona.prospectCompany,
+    prospectGender: persona.prospectGender,
+    industry: persona.industry,
+    difficulty: persona.difficulty,
+    mood: persona.mood,
+    primaryPain: persona.primaryPain,
+    hiddenObjection: persona.hiddenObjection,
+    budget: persona.budget,
+    prospectFocus: persona.prospectFocus,
+    offerId: offer.id,
+    offerName: offer.offerName,
+    offerDescription: offer.offerDescription,
+    terms: offer.terms,
+    callGoal: offer.callGoal,
+    mode: offer.mode,
+    selectedPersonaId: persona.id,
+    personaNotes: persona.notes || '',
+  }
+}
+
 export const DISCOVERY_PROTOCOL = [
   {
     step: 1,
